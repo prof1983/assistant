@@ -2,7 +2,7 @@
 @Abstract Assistant main class
 @Author Prof1983 <prof1983@ya.ru>
 @Created 14.07.2007
-@LastMod 17.08.2012
+@LastMod 09.11.2012
 }
 unit AssistantProgram;
 
@@ -10,24 +10,13 @@ interface
 
 uses
   IniFiles, SysUtils,
-  AProgramImpl, ASystemData, ATypes,
+  ABase, AProgramImpl, ASystemData, ATypes,
   AiConsts, AiCoreImpl, AilTokenizer,
   AssistantEngine, AssistantEnviromentObj, AssistantGlobals, AssistantModule, AssistantReason,
   AssistantSystem, ModuleInfoRec;
 
 type //** Главный класс программы Assistant
   TAssistantProgram = class(TAProgram)
-  private
-      //** Микроядро системы
-    FCore: TAICore;
-      //** Движок AIAssitant
-    FEngine: TAssistantEngine;
-      //** DLL модули системы
-    FModules: array of TAssistantModule;
-      //** Главный агент
-    FReason: TReason;
-      //** Assistant system
-    FSystem: TAssistantSystem;
   private
     function GetModuleByIndex(Index: Integer): TAssistantModule;
     function GetModuleByLocalID(LocalID: Integer): TAssistantModule;
@@ -38,8 +27,6 @@ type //** Главный класс программы Assistant
     function NewModule(FileName: WideString): TAssistantModule;
   public
     class function GetInstance(): TAssistantProgram;
-    //** Инициализировать
-    function Initialize(): TProfError; override;
     //** Загрузить DLL модули
     procedure LoadModules();
     //** Выполнить файл
@@ -51,9 +38,6 @@ type //** Главный класс программы Assistant
   public
     constructor Create(); override;
   public
-    //** Микроядро системы
-    property Core: TAICore read FCore;
-  public
     //** Колличество DLL модулей
     property ModuleCount: Integer read GetModuleCount;
     //** DLL модули по индексу
@@ -61,6 +45,11 @@ type //** Главный класс программы Assistant
     //** DLL модули по ID
     property ModuleByLocalID[LocalID: Integer]: TAssistantModule read GetModuleByLocalID;
   end;
+
+{** Возвращает микроядро системы }
+function AssistantProgram_GetCore(): TAiCore;
+{** Инициализирует программу }
+function AssistantProgram_Initialize(): AError;
 
 resourcestring
   NoModulesMessage = 'Не найдено ни одного модуля.'#13#10+
@@ -81,6 +70,18 @@ implementation
 
 uses
   fStart;
+
+var
+  {** Микроядро системы }
+  FCore: TAiCore;
+  {** Движок Assitant }
+  FEngine: TAssistantEngine;
+  {** DLL модули системы }
+  FModules: array of TAssistantModule;
+  {** Главный агент }
+  FReason: TReason;
+  {** Assistant system }
+  FSystem: TAssistantSystem;
 
 function SystemProc(Sender, Receiver, Cmd, Param1, Param2: Integer): Integer; stdcall;
 var
@@ -115,6 +116,79 @@ begin
         end;
     end;
 
+  Result := 0;
+end;
+
+// --- Public ---
+
+function AssistantProgram_GetCore(): TAiCore;
+begin
+  Result := FCore;
+end;
+
+function AssistantProgram_Initialize(): AError;
+var
+  IniFile: TIniFile;
+  S: string;
+  FileName: string;
+  P: TAssistantProgram;
+begin
+  P := TAssistantProgram.GetInstance();
+  P.Initialize();
+
+  TStartForm.AddToLog('Инициализация...');
+  FCore := TAICore.Create();
+
+  FSystem := TAssistantSystem.Create();
+  // Задаем параметры по умолчанию
+  FSystem.BootModuleFileName := AssistantGlobals.BootModuleDefaultFileName;
+  FSystem.ConfigurationDir := AssistantGlobals.ConfigurationDefaultDir; //'configuration';
+  FSystem.ModulesDir := ModulesDefaultDir;
+
+  S := ParamStr(1);
+  if (S <> '') then
+  begin
+    FileName := S;
+    S := ExtractFilePath(S);
+    if (S = '') then
+      FileName := FExePath + FileName;
+  end;
+
+  if (FileName = '') then
+  begin
+    FileName := FExePath + 'Assistant.ini';
+    if not(FileExists(FileName)) then
+      FileName := FConfigPath + 'Assistant.ini';
+  end;
+
+  if FileExists(FileName) then
+  begin
+    IniFile := TIniFile.Create(FileName);
+    // модуль загрузчик
+    FSystem.BootModuleFileName := IniFile.ReadString('General', 'BootModule', FSystem.BootModuleFileName);
+    // Директория конфигурации
+    FSystem.ConfigurationDir  := IniFile.ReadString('General', 'Configuration', FSystem.ConfigurationDir);
+    IniFile.Free();
+  end;
+
+  TStartForm.AddToLog('Загрузка DLL модулей...');
+  // Загрузить DLL модули
+  P.LoadModules();
+
+  TStartForm.AddToLog('Инициализация движка (Engine)');
+  FEngine := TAssistantEngine.Create();
+  FEngine.Initialize();
+
+  TStartForm.AddToLog('Инициализация главного агента');
+  FReason := TReason.Create();
+  FEngine.Enviroment.AddComponent(FReason);
+
+  // Нужно раскоментировать, если обязательно требуется запуск модулей.
+  {if Length(FModules) = 0 then
+  begin
+    ShowMessage(NoModulesMessage);
+    Halt(1);
+  end;}
   Result := 0;
 end;
 
@@ -170,70 +244,6 @@ end;
 function TAssistantProgram.GetModuleCount(): Integer;
 begin
   Result := Length(FModules);
-end;
-
-function TAssistantProgram.Initialize(): TProfError;
-var
-  iniFile: TIniFile;
-  s: string;
-  FileName: string;
-begin
-  inherited Initialize();
-
-  TStartForm.AddToLog('Инициализация...');
-  FCore := TAICore.Create();
-
-  FSystem := TAssistantSystem.Create();
-  // Задаем параметры по умолчанию
-  FSystem.BootModuleFileName := AssistantGlobals.BootModuleDefaultFileName;
-  FSystem.ConfigurationDir := AssistantGlobals.ConfigurationDefaultDir; //'configuration';
-  FSystem.ModulesDir := ModulesDefaultDir;
-
-  s := ParamStr(1);
-  if s <> '' then
-  begin
-    FileName := s;
-    s := ExtractFilePath(s);
-    if s = '' then
-      FileName := FExePath + FileName;
-  end;
-
-  if (FileName = '') then
-  begin
-    FileName := FExePath + 'Assistant.ini';
-    if not(FileExists(FileName)) then
-      FileName := FConfigPath + 'Assistant.ini';
-  end;
-
-  if FileExists(FileName) then
-  begin
-    iniFile := TIniFile.Create(FileName);
-    // модуль загрузчик
-    FSystem.BootModuleFileName := iniFile.ReadString('General', 'BootModule', FSystem.BootModuleFileName);
-    // Директория конфигурации
-    FSystem.ConfigurationDir  := iniFile.ReadString('General', 'Configuration', FSystem.ConfigurationDir);
-    iniFile.Free();
-  end;
-
-  TStartForm.AddToLog('Загрузка DLL модулей...');
-  // Загрузить DLL модули
-  LoadModules();
-
-  TStartForm.AddToLog('Инициализация движка (Engine)');
-  FEngine := TAssistantEngine.Create();
-  FEngine.Initialize();
-
-  TStartForm.AddToLog('Инициализация главного агента');
-  FReason := TReason.Create();
-  FEngine.Enviroment.AddComponent(FReason);
-
-  // Нужно раскоментировать, если обязательно требуется запуск модулей.
-  {if Length(FModules) = 0 then
-  begin
-    ShowMessage(NoModulesMessage);
-    Halt(1);
-  end;}
-  Result := 0;
 end;
 
 procedure TAssistantProgram.LoadModules();
