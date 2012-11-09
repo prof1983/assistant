@@ -56,7 +56,7 @@
 			<DCC_K>false</DCC_K>
 			<DCC_N>true</DCC_N>
 			<DCC_S>false</DCC_S>
-			<DCC_DcuOutput>..\..\..\..\Temp\Assistant</DCC_DcuOutput>
+			<DCC_DcuOutput>..\..\..\Temp\Assistant</DCC_DcuOutput>
 			<DCC_E>false</DCC_E>
 			<DCC_F>false</DCC_F>
 		</PropertyGroup>
@@ -82,10 +82,10 @@
 			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
-			<VerInfo_Release>6</VerInfo_Release>
+			<VerInfo_Release>7</VerInfo_Release>
 			<VerInfo_Build>0</VerInfo_Build>
-			<Icon_MainIcon>..\..\..\..\Resources\Assistant.ico</Icon_MainIcon>
-			<VerInfo_Keys>CompanyName=AiKernel.org;FileDescription=;FileVersion=0.0.6.0;InternalName=Assistant;LegalCopyright=(c) AiKernel.org 2010-2012;LegalTrademarks=;OriginalFilename=Assistant.exe;ProductName=AReason;ProductVersion=12;Comments=Build by Prof1983 &lt;prof1983@ya.ru&gt;</VerInfo_Keys>
+			<Icon_MainIcon>..\..\..\Resources\Assistant.ico</Icon_MainIcon>
+			<VerInfo_Keys>CompanyName=AiKernel.org;FileDescription=;FileVersion=0.0.7.0;InternalName=Assistant;LegalCopyright=(c) AiKernel.org 2010-2012;LegalTrademarks=;OriginalFilename=Assistant.exe;ProductName=AReason;ProductVersion=13;Comments=Build by Prof1983 &lt;prof1983@ya.ru&gt;</VerInfo_Keys>
 			<VerInfo_Locale>1033</VerInfo_Locale>
 			<Manifest_File>None</Manifest_File>
 		</PropertyGroup>
