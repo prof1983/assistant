@@ -2,42 +2,100 @@
 @Abstract Assistant main class
 @Author Prof1983 <prof1983@ya.ru>
 @Created 14.07.2007
-@LastMod 09.11.2012
+@LastMod 12.11.2012
 }
 unit AssistantProgram;
+
+{$define ArAssistant}
 
 interface
 
 uses
   IniFiles, SysUtils,
-  ABase, AProgramImpl, ASystemData, ATypes,
-  AiConsts, AiCoreImpl, AilTokenizer,
+  ABase, AConsts2, ALogFileText, AMessageEvent, AMessageEventX, AProgramImpl, ASystemData, ATypes,
+  AiChatAgentImpl, AiConsts, AiCoreImpl, AiInterpretatorImpl, AiReasonAgentImpl, AiReasonerModule,
+  ArMessages,
+  AilTokenizer,
   AssistantEngine, AssistantEnviromentObj, AssistantGlobals, AssistantModule, AssistantReason,
   AssistantSystem, ModuleInfoRec;
 
 type //** Главный класс программы Assistant
   TAssistantProgram = class(TAProgram)
   private
-    function GetModuleByIndex(Index: Integer): TAssistantModule;
-    function GetModuleByLocalID(LocalID: Integer): TAssistantModule;
-    function GetModuleCount(): Integer;
+    {** Проверяем наличие необходимых фреймов в БЗ }
+    procedure CheckKB();
+    {** Создаем агента Asistant }
+    //procedure CreateAsistantAgent();
+    {** Создаем интерпретатор кода }
+    procedure CreateInterpretator();
+    {** Инициализируем источник знаний }
+    //procedure CreateKnowlegeBase();
+    {** Создаем главного аганта реализации разума }
+    procedure CreateReasonAgent();
+    {** Инициализировать агент ChatAgent }
+    procedure InitChatAgent();
+    {** Инициализировать запись лог-сообщений в файл }
+    procedure InitLog();
+    {** Создаем модуль логического вывода на основе онтологии OWL }
+    procedure InitReasoner();
   protected
-    //** Добавить DLL модуль
+    {** Срабатывает при создании объекта }
+    procedure DoCreate(); override;
+    {** Срабатывает при уничтожении объекта }
+    procedure DoDestroy(); override;
+    function DoInitialize(): TProfError; override;
+    {** Срабытывает перед запуском подпроцесса }
+    function DoStart(): WordBool; override;
+    {** Срабатывает после удачного запуска программа (сервиса) }
+    function DoStarted(): WordBool; override;
+  public
+    //function GetConfigAR(): TProfXmlDocument;
+    function GetModuleByIndex(Index: Integer): TAssistantModule;
+    function GetModuleByLocalId(LocalId: Integer): TAssistantModule;
+    function GetModuleCount(): Integer;
+  public
+    //function AddMessage(const AMsg: WideString): AInt; override;
+    {** Выполнить или передать дочерним объектам }
+    function AddMessageA(Msg: AMessage): Integer; virtual;
+    {** Добавить DLL модуль }
     function AddModule(Module: TAssistantModule): Integer;
     function NewModule(FileName: WideString): TAssistantModule;
   public
-    class function GetInstance(): TAssistantProgram;
-    //** Загрузить DLL модули
+    {** Отправить сообщение родительскому объекту через OnMessage }
+    function SendMessage(const Msg: WideString): Integer; override;
+    {** Отправить сообщение родительскому объекту через OnMessageA }
+    function SendMessageA(Msg: AMessage): Integer; virtual;
+    {** Отправляет сообщение родительскому объекту через OnMessage }
+    function SendStrMessage(const Msg: WideString): Integer;
+  public
+    {** Загрузить DLL модули }
     procedure LoadModules();
-    //** Выполнить файл
+    {** Выполнить файл }
     function RunFile(FileName: WideString): Boolean;
-    //** Выполнить скрипт
+    {** Выполнить скрипт }
     function RunScript(Code: WideString): Boolean;
-    //** Выполнить системный метод
+    {** Выполнить системный метод }
     function RunSystemMethod(ClassName, MethodName, Param: WideString): Boolean;
   public
-    constructor Create(); override;
+    {** Освобождает все инициализированные объекты }
+    function Finalize(): AError; override;
+    {** Инициализирует все необходимые объекты }
+    function Initialize(): AError; override;
   public
+    class function GetInstance(): TAssistantProgram;
+  public
+    constructor Create();
+  public
+    (*
+    property ConfigAR: TProfXmlDocument read GetConfigAR;
+    property LogFileName: WideString read FLogFileName write FLogFileName;
+    {** Стек сообщений для модуля }
+    property Messages: TArMessages read FMessages;
+    {** CallBack функция передачи сообщения }
+    property OnMessageA: TProcMessageA read FOnMessageA write FOnMessageA;
+    property SendMessageEvent: TProfMessageEvent read FSendMessageEvent;
+    property SendMessageEventX: TProfMessageEventX read FSendMessageEventX;
+    *)
     //** Колличество DLL модулей
     property ModuleCount: Integer read GetModuleCount;
     //** DLL модули по индексу
@@ -51,6 +109,17 @@ function AssistantProgram_GetCore(): TAiCore;
 {** Инициализирует программу }
 function AssistantProgram_Initialize(): AError;
 
+resourcestring // Сообщения ----------------------------------------------------
+  stInitializeConnectionError = 'Соединение с ядром не инициализировано';
+  stInitializeConnectionOk = 'Соединение с ядром инициализировано';
+  stInitializeConnectionStart = 'Инициализация соединения с ядром';
+  stInitializeEventsError = 'События не инициализированы';
+  stInitializeEventsOk = 'События инициализированы';
+  stInitializeEventsStart = 'Инициализация событий';
+resourcestring
+  INIT_KNOWLEGE_BASE = 'Инициализируем источник знаний';
+  INIT_REASON_AGENT = 'Создаем главного агента реализации разума';
+  INIT_SETTINGS = 'Создаем объект работы с настройками программы';
 resourcestring
   NoModulesMessage = 'Не найдено ни одного модуля.'#13#10+
         'Проверьте настройки программы, проверьте наличие DLL модулей '+
@@ -74,6 +143,21 @@ uses
 var
   {** Микроядро системы }
   FCore: TAiCore;
+  //FConfigAR: TProfXmlDocument;
+  FLogFileName: WideString;
+  FMessages: TArMessages;
+  //** CallBack функция передачи сообщения
+  FOnMessageA: TProcMessageA;
+  FSendMessageEvent: TProfMessageEvent;
+  FSendMessageEventX: TProfMessageEventX;
+  {** Агент чат-бот }
+  FChatAgent: TAiChatAgent;
+  {** Интерпретатор кода на языке AR }
+  FInterpretator: TAiInterpretator;
+  {** Главный объект реализации разума }
+  FReasonAgent: TAiReasonAgent;
+  {** Модуль логического вывода на основе онтологии OWL }
+  FReasoner: TAiReasonerModule;
   {** Движок Assitant }
   FEngine: TAssistantEngine;
   {** DLL модули системы }
@@ -134,10 +218,11 @@ var
   P: TAssistantProgram;
 begin
   P := TAssistantProgram.GetInstance();
-  P.Initialize();
 
   TStartForm.AddToLog('Инициализация...');
-  FCore := TAICore.Create();
+  FCore := TAiCore.Create();
+
+  P.Initialize();
 
   FSystem := TAssistantSystem.Create();
   // Задаем параметры по умолчанию
@@ -194,11 +279,72 @@ end;
 
 { TAssistantProgram }
 
+(*function TAssistantProgram.AddMessage(const AMsg: WideString): Integer;
+var
+  x: AXmlNode;
+  content: AXmlNode;
+  i: Integer;
+  m: WideString;
+begin
+{$ifdef ArAssistant}
+  {SendMessage( //ACL_PREFIX + ACL + CRLF +
+    ACL_SENDER + ':' + 'Core' + CRLF +
+    ACL_CONTENT + ':' + '' + CRLF);}
+
+  m := ARL_PREFIX + ARL + ' ' + ARL_ASSISTANT_FORM + ' ' + ARL_CORE + ' ' + ARL_CMD_CORE_GET_MODULES;
+
+  if (AMsg = m) then
+  begin
+    X := AXmlNode_New0();
+    AXmlNode_SetName(X, 'acl');
+    //x.ChildNodes.New(ACL_SENDER).Value := ARL_CORE;
+    //x.ChildNodes.New(ACL_RECEIVER).Value := ARL_ASSISTANT_FORM;
+    //x.ChildNodes.New(ACL_PERFORMATIVE).Value := ACL_Ansswer;
+    content := AXmlNode_GetChildNodeByName(X, ACL_CONTENT);
+    //content.ChildNodes.New('Core');
+    for i := 0 to FRuntime.ModuleCount - 1 do
+      AXmlNode_GetChildNodeByName(X, FRuntime.GetModuleLocalNameByIndex(i));
+    Result := Self.SendMessageX(X);
+  end
+  else
+  begin
+    //Result := FCore.AddMessage(AMsg);
+  end;
+{$endif}
+end;*)
+
+function TAssistantProgram.AddMessageA(Msg: AMessage): Integer;
+begin
+  Result := 0;
+end;
+
 function TAssistantProgram.AddModule(Module: TAssistantModule): Integer;
 begin
   Result := Length(FModules);
   SetLength(FModules, Result + 1);
   FModules[Result] := Module;
+end;
+
+procedure TAssistantProgram.CheckKB();
+var
+  idAsistantClass: AId;  // ID класса программы ARAsistant
+begin
+  idAsistantClass := 0;
+  // Проверяем наличие в БЗ знаний о программе ARAsistant
+  if (idAsistantClass = 0) then
+  begin
+    // Создаем класс программы ARAsistant
+    idAsistantClass := FCore.KnowledgeBase.NewFrame();
+  end;
+  if idAsistantClass = 0 then
+  begin
+    AddToLog(lgDataBase, ltError, 'Фрейм класса программы ARAssitant не создан');
+    Exit;
+  end;
+  // ...
+
+  // Проверяем наличие в БЗ знаний об окне программы ARAsistant
+  // ...
 end;
 
 constructor TAssistantProgram.Create();
@@ -212,8 +358,240 @@ begin
   Self.FProgramVersionStr := '0.0';
   Self.FSystemName := 'AReason';
 
+  // --- ArAssistant ---
+
+  Self.FConfigDir := AiConfigDir;
+  Self.FDataDir := AiDataDir;
+
   inherited Create();
+
+  FSendMessageEvent := TProfMessageEvent.Create(0, 'SendMessage');
+  FSendMessageEventX := TProfMessageEventX.Create(0, 'SendMessageX');
+
+  // Создать конфигурации программы
+  {if not(Assigned(FConfigDocument)) then
+  try
+    FConfigDocument := TConfigDocument.Create(Self.ExePath + AiConfigDir + PathDelim + Self.ProgramName + '.' + FILE_EXT_CONFIG, AddToLog);
+  except
+  end;}
+
+  if not(Assigned(FMessages)) then
+  try
+    FMessages := TArMessages.Create();
+  except
+    FMessages := nil;
+  end;
 end;
+
+(*procedure TAssistantProgram.CreateAsistantAgent();
+begin
+{$ifdef ArAssistant}
+  // Создаем агента Asistant
+  FAssistantAgent := TAiAssistantAgent.Create();
+  // Задаем интерпретатор
+  FAssistantAgent.Interpretator := FInterpretator;
+  // Задаем код на языке AR
+//  FAssistantAgent.CodeString := FKnowlegeBase.Frames.FreimStringByID[2];
+  // Задаем функцию для логирования
+  FAssistantAgent.OnAddToLog := AddToLog;
+  // Задаем функцию для вывода сообщений
+  FAssistantAgent.OnSendMessageToCore := Self.SendStrMessage;
+  // Задаем функцию для выполнения команд
+//  FAsistantAgent.OnCommand := DoCommand;
+  // Тест прохождения сообщений в программе
+  //FAsistantAgent.Ping('Тестовое сообщение');
+
+  // TODO: Добавляем агента в список агентов
+  FCore.Agents.Add(FAssistantAgent);
+  //FAgents.Add(FAsistantAgent);
+{$endif}
+end;*)
+
+procedure TAssistantProgram.CreateInterpretator();
+begin
+  // Создаем интерпретатор кода
+  FInterpretator := TAiInterpretator.Create();
+  FInterpretator.OnAddToLog := AddToLog;
+end;
+
+(*procedure TArAssistantProgram.CreateKnowlegeBase();
+var
+  // База знаний
+  FKnowledgeBase: TAIKnowledgeBase;
+begin
+  AddToLog(lgNone, ltInformation, INIT_KNOWLEGE_BASE);
+  FKnowledgeBase := TAiKnowledgeBase.Create();
+  // Задаем параметры
+//  FKnowlegeBase.FilePath := FSettings.KnowlegeBasePath;
+  // Открываем БЗ
+  FKnowledgeBase.Open();
+
+  FCore.KnowledgeBase := FKnowledgeBase;
+end;*)
+
+procedure TAssistantProgram.CreateReasonAgent();
+begin
+{$ifdef ArAssistant}
+  AddToLog(lgNone, ltInformation, INIT_REASON_AGENT);
+  FReasonAgent := TAiReasonAgent.Create();
+  // Залаем функцию вывода лог-сообщений
+  FReasonAgent.OnAddToLog := AddToLog;
+  // Задаем функцию вывода сообщений
+  FReasonAgent.OnSendMessageToCore := SendStrMessage;
+  // Задаем лог-префикс
+  FReasonAgent.LogPrefix := '  ';
+  // Задаем источник знаний
+  FReasonAgent.Pool := FCore.KnowledgeBase;
+  // Задаем ID фрейма разума
+//  FReasonAgent.ID := FSettings.ReasonID;
+  // Инициализируем главный объект
+  FReasonAgent.Initialize();
+
+  FCore.Agents.Add(FReasonAgent);
+{$endif}
+end;
+
+procedure TAssistantProgram.DoCreate();
+begin
+  Self.FIsComServer := False;
+  inherited DoCreate();
+  // Создаем локальное ядро программы
+  FCore := TAiCore.Create();
+  IInterface(FCore)._AddRef();
+  //FCore.OnSendMessage := Self.SendMessageEvent.Run;
+  //FCore.OnSendMessageX := Self.SendMessageEventX.Run;
+  //FCore.Initialize();
+
+  // Создаем модуль логического вывода на основе онтологии OWL
+  InitReasoner();
+
+  FReasoner := TAiReasonerModule.Create();
+end;
+
+procedure TAssistantProgram.DoDestroy();
+begin
+  if Assigned(FMessages) then
+  try
+    FMessages.Free();
+  finally
+    FMessages := nil;
+  end;
+  inherited DoDestroy();
+end;
+
+function TAssistantProgram.DoInitialize(): TProfError;
+begin
+  Result := inherited DoInitialize();
+  InitLog();
+  AddToLog(lgGeneral, ltInformation, '=');
+  AddToLog(lgGeneral, ltInformation, 'Инициализация программы');
+end;
+
+function TAssistantProgram.DoStart(): WordBool;
+begin
+  // Начинаем выполнение кода главного агента реализации разума
+  FReasonAgent.Start();
+end;
+
+function TAssistantProgram.DoStarted(): WordBool;
+begin
+  AddToLog(lgGeneral, ltInformation, stInitializeConnectionStart);
+  Result := inherited DoStarted();
+end;
+
+function TAssistantProgram.Finalize(): AError;
+var
+  Res: AError;
+begin
+  Res := inherited Finalize();
+
+  if Assigned(FCore) then
+  try
+    try
+      IInterface(FCore)._Release();
+    finally
+      FCore := nil;
+    end;
+  except
+  end;
+
+  if Assigned(FReasoner) then
+  try
+    try
+      IINterface(FReasoner)._Release();
+    finally
+      FReasoner := nil;
+    end;
+  except
+  end;
+
+  if Assigned(FChatAgent) then
+  try
+    try
+      IInterface(FChatAgent)._Release();
+    finally
+      FChatAgent := nil;
+    end;
+  except
+  end;
+
+  if Assigned(FInterpretator) then
+  try
+    try
+      IInterface(FInterpretator)._Release();
+    finally
+      FInterpretator := nil;
+    end;
+  except
+  end;
+
+  if Assigned(FReasonAgent) then
+  try
+    try
+      IInterface(FReasonAgent)._Release();
+    finally
+      FReasonAgent := nil;
+    end;
+  except
+  end;
+
+  if Assigned(FReasoner) then
+  try
+    try
+      IInterface(FReasoner)._Release();
+    finally
+      FReasoner := nil;
+    end;
+  except
+  end;
+
+  Result := Res;
+end;
+
+(*function TAssistantProgram.GetConfigAR(): TProfXmlDocument;
+var
+  FileName: string;
+  FileNameTmp: string;
+begin
+  Result := nil;
+  if not(Assigned(FConfigAR)) then
+  try
+    FileName := FExePath + AiConfigDir + PathDelim + 'Ar.' + FILE_EXT_CONFIG;
+    if FileExists(FileName) then
+    begin
+      FileNameTmp := FExePath + AiConfigDir + PathDelim + Self.ProgramName + '_Ar.' + FILE_EXT_CONFIG;
+      CopyFile(PChar(string(FileName)), PChar(string(FileNameTmp)), True);
+
+      FConfigAR := TProfXmlDocument.Create();
+      FConfigAR.FileName := FileNameTmp;
+      FConfigAR.Initialize();
+      FConfigAR.GetDocumentElement();
+    end;
+  except
+  end;
+  if Assigned(FConfigAR) then
+    Result := FConfigAR; //FConfigAR.Document;
+end;*)
 
 class function TAssistantProgram.GetInstance(): TAssistantProgram;
 begin
@@ -244,6 +622,59 @@ end;
 function TAssistantProgram.GetModuleCount(): Integer;
 begin
   Result := Length(FModules);
+end;
+
+procedure TAssistantProgram.InitChatAgent();
+begin
+  FChatAgent := TAiChatAgent.Create();
+  FChatAgent.Initialize();
+  FChatAgent.OnSendMessageToCore := SendStrMessage;
+  FChatAgent.OnAddToLog := AddToLog;
+  FCore.Agents.Add(FChatAgent);
+end;
+
+function TAssistantProgram.Initialize(): TProfError;
+begin
+  Result := inherited Initialize();
+
+  InitLog();
+
+  // Инициализируем источник знаний
+  //CreateKnowlegeBase();
+  // Проверяем наличие необходимых фреймов в БЗ
+  CheckKB();
+  // Создаем интерпретатор кода
+  CreateInterpretator();
+
+  // Создаем главный агент реализации разума
+  CreateReasonAgent();
+
+  // Инициализируем агента чат-бот
+  InitChatAgent();
+
+  AddToLog(lgNone, ltInformation, '-');
+
+  //FCore.OnSendMessage := SendMessage;
+  //FCore.OnSendMessageX := SendMessageX;
+end;
+
+procedure TAssistantProgram.InitLog();
+var
+  Log: TALogFileText;
+begin
+  if (FLogFileName = '') then
+    FLogFileName := FExePath + AiLogDir + PathDelim + Self.ProgramName + '.' + FILE_EXT_LOG;
+  Log := TALogFileText.Create();
+  Log.FileName := FLogFileName;
+  Log.Initialize();
+  FLogDocuments.Add(Log.GetSelf());
+end;
+
+procedure TAssistantProgram.InitReasoner();
+begin
+  FReasoner := TAiReasonerModule.Create();
+  FReasoner.Initialize();
+  //FCore.AddModule(FReasoner);
 end;
 
 procedure TAssistantProgram.LoadModules();
@@ -378,6 +809,27 @@ begin
       Result := True;
     end;
   end;
+end;
+
+function TAssistantProgram.SendMessage(const Msg: WideString): Integer;
+begin
+  Result := inherited SendMessage(Msg);
+  FSendMessageEvent.Run(Msg);
+end;
+
+function TAssistantProgram.SendMessageA(Msg: AMessage): Integer;
+begin
+  Result := 0;
+  if Assigned(FOnMessageA) then
+  try
+    Result := FOnMessageA(Msg);
+  except
+  end;
+end;
+
+function TAssistantProgram.SendStrMessage(const Msg: WideString): Integer;
+begin
+  Result := FSendMessageEvent.Run(Msg);
 end;
 
 end.

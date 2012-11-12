@@ -51,7 +51,7 @@
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_UsePackage>vcl;rtl;vclx;dbrtl;vcldb;adortl;dbxcds;dbexpress;vclib;ibxpress;xmlrtl;vclactnband;inet;IntrawebDB_80_100;Intraweb_80_100;vclie;inetdbbde;inetdbxpress;IndyCore;IndySystem;dclOfficeXP;VclSmp;soaprtl;dsnap;IndyProtocols;bdertl;teeui;teedb;tee;vcldbx;dsnapcon;websnap;webdsnap;PasLexW32D90;$(DCC_UsePackage)</DCC_UsePackage>
 			<DCC_ExeOutput>..\..\..\Bin</DCC_ExeOutput>
-			<DCC_UnitSearchPath>..;..\..\Ait\Acl;..\..\Ait\Agents;..\..\Ait\Ail;..\..\Ait\Base;..\..\Ait\Common;..\..\Ait\Core;..\..\Ait\Data;..\..\Ait\Data\Kb;..\..\Ait\Data\KbDesc;..\..\Ait\Data\Owl;..\..\Ait\Forms;..\..\Ait\Interpretator;..\..\Ait\Io;..\..\Ait\Reminder;..\..\AToolkit\Base;..\..\AToolkit\Common;..\..\AToolkit\Controls;..\..\AToolkit\Log;..\..\AToolkit\OpenGlDemo;..\..\AToolkit\System;..\..\AToolkit\Ui;..\..\AToolkit\Xml;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..;..\..\Ait\Acl;..\..\Ait\Agents;..\..\Ait\Ail;..\..\Ait\Base;..\..\Ait\Common;..\..\Ait\Core;..\..\Ait\Data;..\..\Ait\Data\Kb;..\..\Ait\Data\KbDesc;..\..\Ait\Data\Owl;..\..\Ait\Forms;..\..\Ait\Interpretator;..\..\Ait\Io;..\..\Ait\Net;..\..\Ait\Reminder;..\..\AToolkit\Base;..\..\AToolkit\Common;..\..\AToolkit\Controls;..\..\AToolkit\Log;..\..\AToolkit\OpenGlDemo;..\..\AToolkit\System;..\..\AToolkit\Ui;..\..\AToolkit\Xml;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
 			<DCC_K>false</DCC_K>
 			<DCC_N>true</DCC_N>
@@ -96,6 +96,7 @@
 			<DCCReference Include="..\AssistantBoot.pas">
 				<Form>$R *.res</Form>
 			</DCCReference>
+			<DCCReference Include="..\..\Ar\Common\ArMessages.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
