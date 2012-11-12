@@ -41,6 +41,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_Define>NoRuntime;NoRuntimeConfig;NoSettings;$(DCC_Define)</DCC_Define>
 			<VerInfo_Build>12</VerInfo_Build>
 			<VerInfo_Locale>1049</VerInfo_Locale>
 			<VerInfo_Keys>CompanyName=AiKernel.org;FileDescription=Персональный асcистент;FileVersion=0.0.5.12;InternalName=Assistant;LegalCopyright=(c) AiKernel.org 2010-2012;LegalTrademarks=;OriginalFilename=Assistant.exe;ProductName=AReason;ProductVersion=0.0.5;Comments=Build by Prof1983 prof1983@yandex.ru</VerInfo_Keys>
@@ -51,7 +52,7 @@
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_UsePackage>vcl;rtl;vclx;dbrtl;vcldb;adortl;dbxcds;dbexpress;vclib;ibxpress;xmlrtl;vclactnband;inet;IntrawebDB_80_100;Intraweb_80_100;vclie;inetdbbde;inetdbxpress;IndyCore;IndySystem;dclOfficeXP;VclSmp;soaprtl;dsnap;IndyProtocols;bdertl;teeui;teedb;tee;vcldbx;dsnapcon;websnap;webdsnap;PasLexW32D90;$(DCC_UsePackage)</DCC_UsePackage>
 			<DCC_ExeOutput>..\..\..\Bin</DCC_ExeOutput>
-			<DCC_UnitSearchPath>..;..\..\Ait\Acl;..\..\Ait\Agents;..\..\Ait\Ail;..\..\Ait\Base;..\..\Ait\Common;..\..\Ait\Core;..\..\Ait\Data;..\..\Ait\Data\Kb;..\..\Ait\Data\KbDesc;..\..\Ait\Data\Owl;..\..\Ait\Forms;..\..\Ait\Interpretator;..\..\Ait\Io;..\..\Ait\Net;..\..\Ait\Reminder;..\..\AToolkit\Base;..\..\AToolkit\Common;..\..\AToolkit\Controls;..\..\AToolkit\Log;..\..\AToolkit\OpenGlDemo;..\..\AToolkit\System;..\..\AToolkit\Ui;..\..\AToolkit\Xml;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..;..\..\Ait\Acl;..\..\Ait\Agents;..\..\Ait\Ail;..\..\Ait\Base;..\..\Ait\Common;..\..\Ait\Core;..\..\Ait\Data;..\..\Ait\Data\Kb;..\..\Ait\Data\KbDesc;..\..\Ait\Data\Owl;..\..\Ait\Forms;..\..\Ait\Interpretator;..\..\Ait\Io;..\..\Ait\Net;..\..\Ait\Reminder;..\..\AToolkit\Base;..\..\AToolkit\Collections-;..\..\AToolkit\Common;..\..\AToolkit\Controls;..\..\AToolkit\Events;..\..\AToolkit\Log;..\..\AToolkit\OpenGlDemo;..\..\AToolkit\Settings;..\..\AToolkit\Strings;..\..\AToolkit\System;..\..\AToolkit\Ui;..\..\AToolkit\Xml;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
 			<DCC_K>false</DCC_K>
 			<DCC_N>true</DCC_N>
@@ -150,6 +151,7 @@
 						<VersionInfoKeys Name="Comments">Build by Prof1983 prof1983@yandex.ru</VersionInfoKeys>
 					</VersionInfoKeys>
 					<Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dclIPIndyImpl160.bpl">IP Abstraction Indy Implementation Design Time</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\bcboffice2k160.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\bcbofficexp160.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k160.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>

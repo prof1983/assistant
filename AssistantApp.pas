@@ -11,6 +11,7 @@ unit AssistantApp;
 interface
 
 uses
+  AUiButtons, AUiComboBox, AUiControls, AUiBase, AUiBox, AUiTextView,
   AFormImpl,
 
   {$ifdef ArAssistant}ActiveX,{$endif}
@@ -45,6 +46,60 @@ var
   FKnowlegeBasePath: WideString;
   {$endif}
   //TrayIcon: TAUITrayIcon;
+
+// --- Private ---
+
+function InitConsolePage(): AError;
+var
+  Page: AControl;
+  ConsolePanel: AControl;
+  ConsoleRichEdit: AControl;
+  ComboBox1: AControl;
+  Button: AControl;
+  W: AInt;
+begin
+  Page := AssistantForm.AddPage('ConsolePage', 'Console');
+  if (Page = 0) then
+  begin
+    Result := -2;
+    Exit;
+  end;
+
+  ConsolePanel := AUiBox_New(Page, 0);
+  if (Result = 0) then
+  begin
+    Result := -3;
+    Exit;
+  end;
+  AUiControl_SetHeight(ConsolePanel, 26);
+  AUiControl_SetAlign(ConsolePanel, uiAlignBottom);
+  W := AUiControl_GetWidth(ConsolePanel);
+
+  ComboBox1 := AUiComboBox_New(ConsolePanel);
+  if (ComboBox1 = 0) then
+  begin
+    Result := -4;
+    Exit;
+  end;
+  AUiControl_SetPosition(ComboBox1, 2, 2);
+  AUiControl_SetWidth(ComboBox1, W-30);
+  AUiControl_SetAnchors(ComboBox1, uiakLeft + uiakTop + uiakRight);
+
+  // -- ConsoleCommandButton --
+  //Button := AUiButton_New(xxx);
+
+  //xxx
+
+  ConsoleRichEdit := AUiTextView_New(Page, 1);
+  if (ConsoleRichEdit = 0) then
+  begin
+    Result := -10;
+    Exit;
+  end;
+  AUiControl_SetAlign(ConsoleRichEdit, uiAlignClient);
+
+  Result := 0;
+end;
 
 // --- Events ---
 
@@ -123,13 +178,9 @@ begin
   Application.ProcessMessages();
 
   Application.CreateForm(TfmOpenGL, FFaceForm);
-  {$ifdef ArAsssitant}
-  FAssistantForm := TAssistantForm.Create(FFaceForm);
-  {$else}
   // Создаем главное окно программы
   AssistantForm := TAssistantForm.Create(FFaceForm);
-  //Application.CreateForm(TAssistantForm, AssistantForm);
-  {$endif}
+  InitConsolePage();
 
   try
     FFaceForm.IsStar := True;

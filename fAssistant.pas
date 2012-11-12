@@ -2,7 +2,7 @@
 @Abstract Главная форма Assistant
 @Author Prof1983 <prof1983@ya.ru>
 @Created 03.06.2007
-@LastMod 17.08.2012
+@LastMod 12.11.2012
 
 Главная форма программы Assistant.
 Является MDI формой.
@@ -33,7 +33,7 @@ uses
   ACommandComboBoxControl, ALogRichEdit, ASystemData,
   AiBaseTypes, AiCoreImpl, AiCoreIntf, AiForm2007,
   AssistantProgram, AssistantSettings, AssistantSettingsLoader, AssistantDataSaver,
-  ARemind, ARemindEditForm, ARemindForm, ARemindLoader, ARemindSaver,
+  ARemind, ARemindEditForm, ARemindForm, ARemindLoader, ARemindSaver, AUiBase,
   AiTask, AiTaskForm1, AiTaskLoader, AiTaskSaver,
   fAbout1;
 
@@ -157,6 +157,7 @@ type //** Главная форма Assistant
     //TrayPopup: TPopupActionBar;
     //ManagerAction: TAction;
   public
+    function AddPage(const Name, Caption: String): AControl;
     procedure Init;
     //** Инициализировать
     procedure Initialize();
@@ -236,6 +237,17 @@ begin
 
   // Подадим команду микроядру
   // ...
+end;
+
+function TAssistantForm.AddPage(const Name, Caption: String): AControl;
+var
+  Page: TTabSheet;
+begin
+  Page := TTabSheet.Create(MainPageControl);
+  Page.PageControl := MainPageControl;
+  Page.Caption := Caption;
+  Page.Name := Name;
+  Result := AControl(Page);
 end;
 
 function TAssistantForm.AddRemind(Remind: TRemind): Integer;

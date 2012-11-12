@@ -181,15 +181,12 @@ object AssistantForm: TAssistantForm
     Top = 56
     Width = 550
     Height = 202
-    ActivePage = RemindTabSheet
+    ActivePage = TabSheet1
     Align = alClient
     TabOrder = 4
+    ExplicitTop = 58
     object RemindTabSheet: TTabSheet
       Caption = #1053#1072#1087#1086#1084#1080#1085#1072#1085#1080#1103
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object RemindListBox: TListBox
         Left = 0
         Top = 0
@@ -300,10 +297,6 @@ object AssistantForm: TAssistantForm
     object TaskTabSheet: TTabSheet
       Caption = #1047#1072#1076#1072#1085#1080#1103
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object TaskSplitter: TSplitter
         Left = 137
         Top = 0
@@ -429,10 +422,6 @@ object AssistantForm: TAssistantForm
     object TabSheet1: TTabSheet
       Caption = 'Console'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object ConsolePanel: TPanel
         Left = 0
         Top = 148
@@ -512,11 +501,11 @@ object AssistantForm: TAssistantForm
         TabOrder = 1
       end
       object Button1: TButton
-        Left = 461
+        Left = 412
         Top = 16
-        Width = 75
+        Width = 124
         Height = 25
-        Caption = 'Button1'
+        Caption = 'Run Example1.javax'
         TabOrder = 2
         OnClick = Button1Click
       end
