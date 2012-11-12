@@ -6,8 +6,6 @@
 }
 unit AssistantProgram;
 
-{$define ArAssistant}
-
 interface
 
 uses
@@ -24,8 +22,6 @@ type //** Главный класс программы Assistant
   private
     {** Проверяем наличие необходимых фреймов в БЗ }
     procedure CheckKB();
-    {** Создаем агента Asistant }
-    //procedure CreateAsistantAgent();
     {** Создаем интерпретатор кода }
     procedure CreateInterpretator();
     {** Инициализируем источник знаний }
@@ -49,10 +45,10 @@ type //** Главный класс программы Assistant
     {** Срабатывает после удачного запуска программа (сервиса) }
     function DoStarted(): WordBool; override;
   public
-    //function GetConfigAR(): TProfXmlDocument;
     function GetModuleByIndex(Index: Integer): TAssistantModule;
     function GetModuleByLocalId(LocalId: Integer): TAssistantModule;
     function GetModuleCount(): Integer;
+    function GetSendMessageEvent(): TProfMessageEvent;
   public
     //function AddMessage(const AMsg: WideString): AInt; override;
     {** Выполнить или передать дочерним объектам }
@@ -87,15 +83,13 @@ type //** Главный класс программы Assistant
     constructor Create();
   public
     (*
-    property ConfigAR: TProfXmlDocument read GetConfigAR;
     property LogFileName: WideString read FLogFileName write FLogFileName;
     {** Стек сообщений для модуля }
     property Messages: TArMessages read FMessages;
     {** CallBack функция передачи сообщения }
     property OnMessageA: TProcMessageA read FOnMessageA write FOnMessageA;
-    property SendMessageEvent: TProfMessageEvent read FSendMessageEvent;
-    property SendMessageEventX: TProfMessageEventX read FSendMessageEventX;
     *)
+    property SendMessageEvent: TProfMessageEvent read GetSendMessageEvent;
     //** Колличество DLL модулей
     property ModuleCount: Integer read GetModuleCount;
     //** DLL модули по индексу
@@ -143,10 +137,9 @@ uses
 var
   {** Микроядро системы }
   FCore: TAiCore;
-  //FConfigAR: TProfXmlDocument;
   FLogFileName: WideString;
   FMessages: TArMessages;
-  //** CallBack функция передачи сообщения
+  {** CallBack функция передачи сообщения }
   FOnMessageA: TProcMessageA;
   FSendMessageEvent: TProfMessageEvent;
   FSendMessageEventX: TProfMessageEventX;
@@ -286,7 +279,6 @@ var
   i: Integer;
   m: WideString;
 begin
-{$ifdef ArAssistant}
   {SendMessage( //ACL_PREFIX + ACL + CRLF +
     ACL_SENDER + ':' + 'Core' + CRLF +
     ACL_CONTENT + ':' + '' + CRLF);}
@@ -310,7 +302,6 @@ begin
   begin
     //Result := FCore.AddMessage(AMsg);
   end;
-{$endif}
 end;*)
 
 function TAssistantProgram.AddMessageA(Msg: AMessage): Integer;
@@ -358,8 +349,6 @@ begin
   Self.FProgramVersionStr := '0.0';
   Self.FSystemName := 'AReason';
 
-  // --- ArAssistant ---
-
   Self.FConfigDir := AiConfigDir;
   Self.FDataDir := AiDataDir;
 
@@ -385,7 +374,6 @@ end;
 
 (*procedure TAssistantProgram.CreateAsistantAgent();
 begin
-{$ifdef ArAssistant}
   // Создаем агента Asistant
   FAssistantAgent := TAiAssistantAgent.Create();
   // Задаем интерпретатор
@@ -404,7 +392,6 @@ begin
   // TODO: Добавляем агента в список агентов
   FCore.Agents.Add(FAssistantAgent);
   //FAgents.Add(FAsistantAgent);
-{$endif}
 end;*)
 
 procedure TAssistantProgram.CreateInterpretator();
@@ -414,24 +401,8 @@ begin
   FInterpretator.OnAddToLog := AddToLog;
 end;
 
-(*procedure TArAssistantProgram.CreateKnowlegeBase();
-var
-  // База знаний
-  FKnowledgeBase: TAIKnowledgeBase;
-begin
-  AddToLog(lgNone, ltInformation, INIT_KNOWLEGE_BASE);
-  FKnowledgeBase := TAiKnowledgeBase.Create();
-  // Задаем параметры
-//  FKnowlegeBase.FilePath := FSettings.KnowlegeBasePath;
-  // Открываем БЗ
-  FKnowledgeBase.Open();
-
-  FCore.KnowledgeBase := FKnowledgeBase;
-end;*)
-
 procedure TAssistantProgram.CreateReasonAgent();
 begin
-{$ifdef ArAssistant}
   AddToLog(lgNone, ltInformation, INIT_REASON_AGENT);
   FReasonAgent := TAiReasonAgent.Create();
   // Залаем функцию вывода лог-сообщений
@@ -448,7 +419,6 @@ begin
   FReasonAgent.Initialize();
 
   FCore.Agents.Add(FReasonAgent);
-{$endif}
 end;
 
 procedure TAssistantProgram.DoCreate();
@@ -568,31 +538,6 @@ begin
   Result := Res;
 end;
 
-(*function TAssistantProgram.GetConfigAR(): TProfXmlDocument;
-var
-  FileName: string;
-  FileNameTmp: string;
-begin
-  Result := nil;
-  if not(Assigned(FConfigAR)) then
-  try
-    FileName := FExePath + AiConfigDir + PathDelim + 'Ar.' + FILE_EXT_CONFIG;
-    if FileExists(FileName) then
-    begin
-      FileNameTmp := FExePath + AiConfigDir + PathDelim + Self.ProgramName + '_Ar.' + FILE_EXT_CONFIG;
-      CopyFile(PChar(string(FileName)), PChar(string(FileNameTmp)), True);
-
-      FConfigAR := TProfXmlDocument.Create();
-      FConfigAR.FileName := FileNameTmp;
-      FConfigAR.Initialize();
-      FConfigAR.GetDocumentElement();
-    end;
-  except
-  end;
-  if Assigned(FConfigAR) then
-    Result := FConfigAR; //FConfigAR.Document;
-end;*)
-
 class function TAssistantProgram.GetInstance(): TAssistantProgram;
 begin
   Result := TAssistantProgram(inherited GetInstance());
@@ -622,6 +567,11 @@ end;
 function TAssistantProgram.GetModuleCount(): Integer;
 begin
   Result := Length(FModules);
+end;
+
+function TAssistantProgram.GetSendMessageEvent(): TProfMessageEvent;
+begin
+  Result := FSendMessageEvent;
 end;
 
 procedure TAssistantProgram.InitChatAgent();
