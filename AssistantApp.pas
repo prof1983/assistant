@@ -11,6 +11,7 @@ unit AssistantApp;
 interface
 
 uses
+  AssistantGui,
   {$ifdef ArAssistant}ActiveX,{$endif}
   Forms,
   ABase, AOpenGlForm,
