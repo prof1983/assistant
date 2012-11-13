@@ -2,7 +2,7 @@
 @Abstract Assistant app
 @Author Prof1983 <prof1983@ya.ru>
 @Created 05.04.2007
-@LastMod 12.11.2012
+@LastMod 13.11.2012
 }
 unit AssistantApp;
 
@@ -11,15 +11,12 @@ unit AssistantApp;
 interface
 
 uses
-  AUiButtons, AUiComboBox, AUiControls, AUiBase, AUiBox, AUiTextView,
-  AFormImpl,
-
   {$ifdef ArAssistant}ActiveX,{$endif}
   Forms,
   ABase, AOpenGlForm,
   {$ifdef ArAssistant}ArBuilderForm, ArTasksForm,{$endif}
   {$ifdef ArAssistant}ArKernelObj,{$endif}
-  AssistantProgram,
+  AssistantProgram, AssistantConsolePage,
   {$ifdef ArAssistant}ArAssistantForm,{$endif}
   fAssistant,
   fStart;
@@ -46,60 +43,6 @@ var
   FKnowlegeBasePath: WideString;
   {$endif}
   //TrayIcon: TAUITrayIcon;
-
-// --- Private ---
-
-function InitConsolePage(): AError;
-var
-  Page: AControl;
-  ConsolePanel: AControl;
-  ConsoleRichEdit: AControl;
-  ComboBox1: AControl;
-  Button: AControl;
-  W: AInt;
-begin
-  Page := AssistantForm.AddPage('ConsolePage', 'Console');
-  if (Page = 0) then
-  begin
-    Result := -2;
-    Exit;
-  end;
-
-  ConsolePanel := AUiBox_New(Page, 0);
-  if (Result = 0) then
-  begin
-    Result := -3;
-    Exit;
-  end;
-  AUiControl_SetHeight(ConsolePanel, 26);
-  AUiControl_SetAlign(ConsolePanel, uiAlignBottom);
-  W := AUiControl_GetWidth(ConsolePanel);
-
-  ComboBox1 := AUiComboBox_New(ConsolePanel);
-  if (ComboBox1 = 0) then
-  begin
-    Result := -4;
-    Exit;
-  end;
-  AUiControl_SetPosition(ComboBox1, 2, 2);
-  AUiControl_SetWidth(ComboBox1, W-30);
-  AUiControl_SetAnchors(ComboBox1, uiakLeft + uiakTop + uiakRight);
-
-  // -- ConsoleCommandButton --
-  //Button := AUiButton_New(xxx);
-
-  //xxx
-
-  ConsoleRichEdit := AUiTextView_New(Page, 1);
-  if (ConsoleRichEdit = 0) then
-  begin
-    Result := -10;
-    Exit;
-  end;
-  AUiControl_SetAlign(ConsoleRichEdit, uiAlignClient);
-
-  Result := 0;
-end;
 
 // --- Events ---
 
@@ -180,7 +123,7 @@ begin
   Application.CreateForm(TfmOpenGL, FFaceForm);
   // Создаем главное окно программы
   AssistantForm := TAssistantForm.Create(FFaceForm);
-  InitConsolePage();
+  AssistantConsolePage_Init(AssistantForm);
 
   try
     FFaceForm.IsStar := True;

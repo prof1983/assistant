@@ -2,7 +2,7 @@
 @Abstract Personal assistant
 @Author Prof1983 <prof1983@ya.ru>
 @Created 03.07.2007
-@LastMod 12.11.2012
+@LastMod 13.11.2012
 }
 program Assistant;
 

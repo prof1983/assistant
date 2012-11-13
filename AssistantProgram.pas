@@ -2,7 +2,7 @@
 @Abstract Assistant main class
 @Author Prof1983 <prof1983@ya.ru>
 @Created 14.07.2007
-@LastMod 12.11.2012
+@LastMod 13.11.2012
 }
 unit AssistantProgram;
 
@@ -66,8 +66,6 @@ type //** Главный класс программы Assistant
   public
     {** Загрузить DLL модули }
     procedure LoadModules();
-    {** Выполнить файл }
-    function RunFile(FileName: WideString): Boolean;
     {** Выполнить скрипт }
     function RunScript(Code: WideString): Boolean;
     {** Выполнить системный метод }
@@ -671,11 +669,6 @@ function TAssistantProgram.NewModule(FileName: WideString): TAssistantModule;
 begin
   Result := TAssistantModule.Create(FileName);
   AddModule(Result);
-end;
-
-function TAssistantProgram.RunFile(FileName: WideString): Boolean;
-begin
-  Result := False;
 end;
 
 function TAssistantProgram.RunScript(Code: WideString): Boolean;

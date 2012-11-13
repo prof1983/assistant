@@ -2,7 +2,7 @@
 @Abstract Главная форма Assistant
 @Author Prof1983 <prof1983@ya.ru>
 @Created 03.06.2007
-@LastMod 12.11.2012
+@LastMod 13.11.2012
 
 Главная форма программы Assistant.
 Является MDI формой.
@@ -78,14 +78,6 @@ type //** Главная форма Assistant
     LogRichEdit: TRichEdit;
     TaskTreeView: TTreeView;
     TaskSplitter: TSplitter;
-    TabSheet1: TTabSheet;
-    ConsolePanel: TPanel;
-    ComboBox1: TComboBox;
-    ConsoleCommandButton: TButton;
-    ConsoleRunCommandSpeedButton: TSpeedButton;
-    ConsoleRichEdit: TRichEdit;
-    Button1: TButton;
-    procedure Button1Click(Sender: TObject);
     procedure RunCommandSpeedButtonClick(Sender: TObject);
     procedure AboutActionExecute(Sender: TObject);
     procedure AddRemindActionExecute(Sender: TObject);
@@ -141,7 +133,7 @@ type //** Главная форма Assistant
       // Микроядро системы
     FCore: TAICore;
     procedure SetCore(Value: TAICore);
-  protected
+  public
     //** Добавить лог-сообщение
     function AddToLog(Msg: WideString): Integer; virtual;
     function CloseWindow(form: TForm): Boolean; virtual;
@@ -316,11 +308,6 @@ begin
   end;}
 end;
 
-procedure TAssistantForm.Button1Click(Sender: TObject);
-begin
-  TAssistantProgram.GetInstance().RunFile('Example1.javax');
-end;
-
 procedure TAssistantForm.CommandButtonClick(Sender: TObject);
 begin
   // ...
@@ -391,30 +378,6 @@ var
   form: TForm;
 begin
   Result := False;
-  if (cmd = 'HELP') then
-  begin
-    AddToLog('--------------------------------');
-    AddToLog('Программа: AIReasoner');
-    AddToLog('Версия: 0.0.0.1');
-    AddToLog('--------------------------------');
-    AddToLog('Краткая справка по командам программы');
-    AddToLog('HELP - вывести справку');
-    AddToLog('RULES - вывести список правил');
-    AddToLog('FACTS - вывести список фактов');
-    AddToLog('LOG - показат окно логирования');
-    AddToLog('--------------------------------');
-    Result := True;
-  end
-  else if (cmd = 'FACTS') then
-  begin
-    AddToLog('--------------------------------');
-    AddToLog('Список фактов');
-    AddToLog('Список фактов пуст');
-    // ...
-    AddToLog('--------------------------------');
-    Result := True;
-  end
-  else
   begin
     // Передаем команду активному дочернему окну
     form := ActiveMDIChild;
@@ -512,18 +475,7 @@ begin
 
     // Выполнить скрипт
     p.RunScript('LogJournal.AddToLog("Проверка AIL");');
-
-    Button1.Visible := True;
-  end
-  else
-    Button1.Visible := False;
-
-  ConsoleRichEdit.Lines.Add(p.ProgramName + ' (' + IntToStr(p.ProgramID) + ') ' + p.ProgramVersion);
-  if (p.ProgramNameDisplay <> '') and (p.ProgramName <> p.ProgramNameDisplay) then
-    ConsoleRichEdit.Lines.Add(p.ProgramNameDisplay);
-  if p.ProgramDescription <> '' then
-    ConsoleRichEdit.Lines.Add(p.ProgramDescription);
-  ConsoleRichEdit.Lines.Add('Введите имя:');
+  end;
 end;
 
 procedure TAssistantForm.Initialize();

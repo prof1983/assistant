@@ -181,10 +181,9 @@ object AssistantForm: TAssistantForm
     Top = 56
     Width = 550
     Height = 202
-    ActivePage = TabSheet1
+    ActivePage = RemindTabSheet
     Align = alClient
     TabOrder = 4
-    ExplicitTop = 58
     object RemindTabSheet: TTabSheet
       Caption = #1053#1072#1087#1086#1084#1080#1085#1072#1085#1080#1103
       object RemindListBox: TListBox
@@ -417,97 +416,6 @@ object AssistantForm: TAssistantForm
         Align = alLeft
         Indent = 19
         TabOrder = 2
-      end
-    end
-    object TabSheet1: TTabSheet
-      Caption = 'Console'
-      ImageIndex = 2
-      object ConsolePanel: TPanel
-        Left = 0
-        Top = 148
-        Width = 542
-        Height = 26
-        Align = alBottom
-        TabOrder = 0
-        DesignSize = (
-          542
-          26)
-        object ConsoleRunCommandSpeedButton: TSpeedButton
-          Left = 515
-          Top = 3
-          Width = 21
-          Height = 21
-          Anchors = [akTop, akRight]
-          Glyph.Data = {
-            36030000424D3603000000000000360000002800000010000000100000000100
-            1800000000000003000000000000000000000000000000000000FFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFF000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FF0000
-            0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFF00000000FF0000FF00000000FFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FF0000
-            FF0000FF00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFF00000000FF0000FF0000FF0000FF00000000FFFFFFFFFF
-            FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FF0000
-            FF0000FF0000FF0000FF00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFF00000000FF0000FF0000FF0000FF0000FF0000FF000000
-            00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FF0000
-            FF0000FF0000FF0000FF00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFF00000000FF0000FF0000FF0000FF00000000FFFFFFFFFF
-            FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FF0000
-            FF0000FF00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFF00000000FF0000FF00000000FFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FF0000
-            0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFF000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-            FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}
-          OnClick = RunCommandSpeedButtonClick
-        end
-        object ComboBox1: TComboBox
-          Left = 4
-          Top = 3
-          Width = 478
-          Height = 21
-          Anchors = [akLeft, akTop, akRight]
-          TabOrder = 0
-        end
-        object ConsoleCommandButton: TButton
-          Left = 488
-          Top = 3
-          Width = 21
-          Height = 21
-          Anchors = [akTop, akRight]
-          Caption = '...'
-          TabOrder = 1
-          OnClick = CommandButtonClick
-        end
-      end
-      object ConsoleRichEdit: TRichEdit
-        Left = 0
-        Top = 0
-        Width = 542
-        Height = 148
-        Align = alClient
-        Font.Charset = RUSSIAN_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -11
-        Font.Name = 'Tahoma'
-        Font.Style = []
-        ParentFont = False
-        TabOrder = 1
-      end
-      object Button1: TButton
-        Left = 412
-        Top = 16
-        Width = 124
-        Height = 25
-        Caption = 'Run Example1.javax'
-        TabOrder = 2
-        OnClick = Button1Click
       end
     end
   end
