@@ -8,7 +8,8 @@ program Assistant;
 
 uses
   AssistantBoot in '..\AssistantBoot.pas',
-  ArMessages in '..\..\Ar\Common\ArMessages.pas';
+  ArMessages in '..\..\Ar\Common\ArMessages.pas',
+  AShablonForm in '..\..\AToolkit\Forms\AShablonForm.pas' {fmShablon};
 
 {$R *.res}
 
