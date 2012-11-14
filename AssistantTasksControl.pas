@@ -2,7 +2,7 @@
 @Abstract Главное окно управления заданиями
 @Author Prof1983 <prof1983@ya.ru>
 @Created 04.06.2005
-@LastMod 13.11.2012
+@LastMod 14.11.2012
 
 Работает с фреймами заданий и вопросов типа XML.
 Описание структуры данных фрейма задания:
@@ -15,11 +15,31 @@ unit AssistantTasksControl;
 interface
 
 uses
-  Buttons, Controls, StdCtrls,
-  ABase, AControlImpl, ATypes,
-  AiTaskListImpl;
+  Buttons, Controls, {ExtCtrls,} StdCtrls,
+  ABase, AConsts2, AControlImpl, AUtils, ASystem, ATaskForm, ATypes,
+  AUiBase, AUiButtons, AUiControls,
+  AiTaskListImpl, AiTaskLoader, AiTaskSaver,
+  AssistantTasks;
+
+type
+  TATasksControlRec = record
+    Parent: TWinControl;
+    TaskButtonPanel: AControl{TPanel};
+    AddTaskButton: AControl{TBitBtn};
+    TaskListBox: TListBox;
+  end;
 
 function AssistantTasksControl_Init(ts: TWinControl; OnSendMessage: TProcMessageStr): AError;
+
+function AssistantTasksControl_Init2(var TasksControl: TATasksControlRec): AError;
+
+function AssistantTasksControl_RefreshTaskListBox(): AError;
+
+function AssistantTasksControl_RemoveTaskByIndex(Index: AInt): AError;
+
+function AssistantTasksControl_Save(): AError;
+
+function AssistantTasksControl_ShowTask(Index: AInt): AError;
 
 implementation
 
@@ -27,55 +47,28 @@ type
   TATasksControl = class(TAControl)
   private
     lbTasks: TListBox;
-    //Panel1: TPanel;
 //    sbNew: TSpeedButton;
 //    sbDelete: TSpeedButton;
 //    sbEdit: TSpeedButton;
 //    sbOk: TSpeedButton;
 //    sbHour: TSpeedButton;
 //    sbDay: TSpeedButton;
-
-//    mmMain: TMainMenu;
-    //miCore: TMenuItem;
-    //miCoreConnect: TMenuItem;
-    //miCoreDisconnect: TMenuItem;
-    //miLog: TMenuItem;
-    //miLogConnect: TMenuItem;
-    //miLogDisconnect: TMenuItem;
-    //miKB: TMenuItem;
-    //miKBConnect: TMenuItem;
-    //miKBDisconnect: TMenuItem;
-    //miSource: TMenuItem;
-    //miSourceOpen: TMenuItem;
-    //miSourceClose: TMenuItem;
 //    miTask: TMenuItem;
 //    miTaskNew: TMenuItem;
 //    miTaskEdit: TMenuItem;
-    //N1: TMenuItem;
 //    miTaskRun: TMenuItem;
 //    miTaskStop: TMenuItem;
 //    miTaskResult: TMenuItem;
-    //N2: TMenuItem;
 //    miQuestion: TMenuItem;
 //    miQuestionNew: TMenuItem;
 //    miQuestionEdit: TMenuItem;
-    //N3: TMenuItem;
 //    miQuestionRun: TMenuItem;
 //    miQuestionStop: TMenuItem;
-    //N4: TMenuItem;
 //    miQuestionResult: TMenuItem;
-    //miHelp: TMenuItem;
-    //miAbout: TMenuItem;
-    //ActionList1: TActionList;
-    //acTaskEdit: TAction;
-    //miRegister: TMenuItem;
-    //miUnregister: TMenuItem;
   private
     //** Список заданий
-    FTaskList: TAITaskList3;
+    FTaskList: TAiTaskList3;
   protected
-    //** Срабатывает при создании
-    procedure DoCreate(); override;
     //** Срабатывает при уничтожении
     procedure DoDestroy(); override;
     //** Срабатывает при инициализации
@@ -91,6 +84,29 @@ type
 var
   {** Контрол для заданий }
   FTasksControl: TATasksControl;
+  FTasksControlRec: TATasksControlRec;
+
+// --- Events ---
+
+function AddTaskButtonClick(Obj, Data: AInt): AError; stdcall;
+var
+  TaskForm: TTaskForm;
+begin
+  try
+    TaskForm := TTaskForm.Create(nil);
+    if (TaskForm.ShowModal() = mrOK) then
+    begin
+      AssistantTasks_NewTask(TaskForm.TitleEdit.Text, TaskForm.CommentMemo.Text);
+      Result := 0;
+      AssistantTasksControl_RefreshTaskListBox();
+    end
+    else
+      Result := 1;
+    TaskForm.Free();
+  except
+    Result := -1;
+  end;
+end;
 
 // --- Public ---
 
@@ -112,18 +128,84 @@ begin
   except
     FTasksControl := nil;
   end;
+  Result := 0;
+end;
+
+function AssistantTasksControl_Init2(var TasksControl: TATasksControlRec): AError;
+begin
+  TasksControl.AddTaskButton := AUiButton_New(TasksControl.TaskButtonPanel);
+  AUiControl_SetTextP(TasksControl.AddTaskButton, 'Добавить');
+  AUiButton_LoadGlyphP(TasksControl.AddTaskButton, AUtils.ExpandFileNameP('..\Resources\Plus.bmp'));
+  AUiControl_SetOnClick(TasksControl.AddTaskButton, AddTaskButtonClick);
+  AUiControl_SetSize(TasksControl.AddTaskButton, 76, 24);
+  AUiControl_SetPosition(TasksControl.AddTaskButton, 6, 8);
+
+  FTasksControlRec := TasksControl;
+
+  TTaskLoader.Load(FTasks, ASystem.GetDataDirectoryPathWS() + 'Tasks.' + FILE_EXT_XML);
+
+  AssistantTasksControl_RefreshTaskListBox();
+
+  Result := 0;
+end;
+
+function AssistantTasksControl_RefreshTaskListBox(): AError;
+var
+  I: Integer;
+begin
+  try
+    FTasksControlRec.TaskListBox.Clear();
+    for i := 0 to High(FTasks) do
+      FTasksControlRec.TaskListBox.Items.Add(FTasks[i].Title + ' - ' + FTasks[i].Comment);
+    Result := 0;
+  except
+    Result := -1;
+  end;
+end;
+
+function AssistantTasksControl_RemoveTaskByIndex(Index: AInt): AError;
+var
+  I: Integer;
+begin
+  Result := -1;
+  if (Index >= 0) and (Index < Length(FTasks)) then
+  begin
+    FTasks[Index] := nil;
+    for i := Index to High(FTasks) - 1 do
+      FTasks[i] := FTasks[i + 1];
+    SetLength(FTasks, High(FTasks));
+    Result := 0;
+  end;
+end;
+
+function AssistantTasksControl_Save(): AError;
+begin
+  TTaskSaver.Save(FTasks, ASystem.GetDataDirectoryPathWS() + 'Tasks.' + FILE_EXT_XML);
+  Result := 0;
+end;
+
+function AssistantTasksControl_ShowTask(Index: AInt): AError;
+var
+  TaskForm: TTaskForm;
+begin
+  if (Index >= 0) and (Index < Length(FTasks)) then
+  try
+    TaskForm := TTaskForm.Create(nil);
+    TaskForm.Task := FTasks[Index];
+    if (TaskForm.ShowModal() = mrOK) then
+    begin
+      AssistantTasksControl_RefreshTaskListBox();
+      Result := 0;
+    end
+    else
+      Result := 1;
+    TaskForm.Free();
+  except
+    Result := -1;
+  end;
 end;
 
 { TATasksControl }
-
-procedure TATasksControl.DoCreate();
-begin
-  inherited DoCreate();
-  //Caption := 'Управление заданиями';
-  //miCore.Caption := 'Ядро';
-  //miCoreConnect.Caption := 'Соединиться';
-  //miCoreDisconnect.Caption := 'Разъединиться';
-end;
 
 procedure TATasksControl.DoDestroy();
 begin
@@ -134,16 +216,6 @@ begin
     FTaskList := nil;
   except
   end;
-
-//  FProgram.Save();
-//  //Save();
-//
-//  if Assigned(FProgram) then
-//  try
-//    FProgram.Free();
-//  finally
-//    FProgram := nil;
-//  end;
   inherited DoDestroy();
 end;
 

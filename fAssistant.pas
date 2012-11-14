@@ -2,7 +2,7 @@
 @Abstract Главная форма Assistant
 @Author Prof1983 <prof1983@ya.ru>
 @Created 03.06.2007
-@LastMod 13.11.2012
+@LastMod 14.11.2012
 
 Главная форма программы Assistant.
 Является MDI формой.
@@ -30,12 +30,12 @@ uses
   Buttons, Classes, ComCtrls, Controls, Dialogs, ExtCtrls, Graphics, Forms,
   ImgList, Menus, Messages, StdActns, StdCtrls, SysUtils, ToolWin, Variants,
   Windows, XPStyleActnCtrls,
-  ACommandComboBoxControl, ALogRichEdit, ASystemData,
+  ABase, ACommandComboBoxControl, AConsts2, ALogRichEdit,
+  ARemind, ARemindEditForm, ARemindForm, ARemindLoader, ARemindSaver, ATaskObj,
+  AUiBase, AUiDialogs, AUiWindows, ASystemData,
   AiBaseTypes, AiCoreImpl, AiCoreIntf, AiForm2007,
-  AssistantProgram, AssistantSettings, AssistantSettingsLoader, AssistantDataSaver,
-  ARemind, ARemindEditForm, ARemindForm, ARemindLoader, ARemindSaver, AUiBase,
-  AiTask, AiTaskForm1, AiTaskLoader, AiTaskSaver,
-  fAbout1;
+  AssistantDataSaver, AssistantProgram, AssistantSettings, AssistantSettingsLoader,
+  {AssistantTasks,} AssistantTasksControl;
 
 type //** Главная форма Assistant
   TAssistantForm = class(TForm)
@@ -66,7 +66,6 @@ type //** Главная форма Assistant
     TaskTabSheet: TTabSheet;
     TaskListBox: TListBox;
     TaskButtonPanel: TPanel;
-    AddTaskBitBtn: TBitBtn;
     RemoteTaskBitBtn: TBitBtn;
     AddRemindAction: TAction;
     AddTaskAction: TAction;
@@ -81,7 +80,6 @@ type //** Главная форма Assistant
     procedure RunCommandSpeedButtonClick(Sender: TObject);
     procedure AboutActionExecute(Sender: TObject);
     procedure AddRemindActionExecute(Sender: TObject);
-    procedure AddTaskActionExecute(Sender: TObject);
     procedure CloseActionExecute(Sender: TObject);
     procedure CloseProjectActionExecute(Sender: TObject);
     procedure CommandButtonClick(Sender: TObject);
@@ -115,20 +113,13 @@ type //** Главная форма Assistant
     FReminds: TReminds;
     //** Настройки программы
     FSettings: TAssistantSettings;
-    //** Список заданий
-    FTasks: TTasks;
   private // Reminder
     //** Флаг, который показывает, что это окно является главным окном сборки
     FIsMainWindow: Boolean;
-    //FPool: TAIFilePool;
     function AddRemind(Remind: TRemind): Integer;
-    function AddTask(Task: TTask): Integer;
     function NewRemind(Title: WideString; DateTime: TDateTime): TRemind;
-    function NewTask(Title, Comment: WideString): TTask;
     procedure RefreshRemindListBox();
-    procedure RefreshTaskListBox();
     function RemoteRemindByIndex(Index: Integer): Boolean;
-    function RemoteTaskByIndex(Index: Integer): Boolean;
   protected
       // Микроядро системы
     FCore: TAICore;
@@ -179,30 +170,18 @@ const
   dtMin = 1 / 24 / 60;
   dtSec = dtMin / 60;
 
-const
-  FILE_EXT_INI  = 'ini';
-  FILE_EXT_POOL = 'pool';
-  FILE_EXT_XML  = 'xml';
-
 {$R *.dfm}
 
-{TAssistantForm}
+{ TAssistantForm }
 
 procedure TAssistantForm.AboutActionExecute(Sender: TObject);
 var
-  fmAbout: TAboutForm;
-  Prog: TAssistantProgram;
+  W: AWindow;
 begin
-  try
-    fmAbout := TAboutForm.Create(Self);
-    fmAbout.Picture.Assign(Application.Icon);
-    Prog := AssistantProgram.TAssistantProgram.GetInstance();
-    fmAbout.ProgramName := Prog.ProgramName;
-    fmAbout.Reference := 'aikernel.org';
-    fmAbout.ShowModal();
-    fmAbout.Free();
-  except
-  end;
+  W := AUi_NewAboutDialog();
+  AUi_InitAboutDialog2(W);
+  AUiWindow_ShowModal(W);
+  AUiWindow_Free(W);
 end;
 
 procedure TAssistantForm.CloseProjectActionExecute(Sender: TObject);
@@ -272,26 +251,6 @@ begin
   fmRemind.Free();
 end;
 
-function TAssistantForm.AddTask(Task: TTask): Integer;
-begin
-  Result := Length(FTasks);
-  SetLength(FTasks, Result + 1);
-  FTasks[Result] := Task;
-end;
-
-procedure TAssistantForm.AddTaskActionExecute(Sender: TObject);
-var
-  TaskForm: TTaskForm;
-begin
-  TaskForm := TTaskForm.Create(Self);
-  if TaskForm.ShowModal() = mrOK then
-  begin
-    NewTask(TaskForm.TitleEdit.Text, TaskForm.CommentMemo.Text);
-    RefreshTaskListBox();
-  end;
-  TaskForm.Free();
-end;
-
 function TAssistantForm.AddToLog(Msg: WideString): Integer;
 begin
   Result := 0;
@@ -300,12 +259,6 @@ begin
     Result := FOnAddToLog(Msg);
   except
   end;
-
-  {if Assigned(FLog) then
-  try
-    Result := FLog.AddMsg(Msg);
-  except
-  end;}
 end;
 
 procedure TAssistantForm.CommandButtonClick(Sender: TObject);
@@ -442,9 +395,8 @@ procedure TAssistantForm.Init;
 var
   RichEditLog: TRichEditLog;
   p: TAssistantProgram;
+  TasksControl: TATasksControlRec;
 begin
-  ////TAssistantDataSaver.Save('c:\example.xml', DomImplementation);
-
   // Инициализируем настройки программы
   FSettings := TAssistantSettings.Create();
   FSettings.Title := Caption;
@@ -452,13 +404,14 @@ begin
   if FSettings.Title <> '' then
     Caption := FSettings.Title;
 
-  //FConfigDocument := TConfigDocument.
+  TasksControl.Parent := TaskTabSheet;
+  TasksControl.TaskButtonPanel := AControl(TaskButtonPanel);
+  TasksControl.TaskListBox := TaskListBox;
+  AssistantTasksControl_Init2(TasksControl);
 
   // Загружаем данные из XML файлов
   Reminder_Load(FReminds, ExtractFilePath(ParamStr(0)) + 'Reminder.' + FILE_EXT_XML);
-  TTaskLoader.Load(FTasks, ExtractFilePath(ParamStr(0)) + 'Tasks.' + FILE_EXT_XML);
   RefreshRemindListBox();
-  RefreshTaskListBox();
 
   // Инициализируем контрол для элемента ввода команд
   FCommandComboBoxControl := TCommandComboBoxControl.Create();
@@ -518,14 +471,6 @@ begin
   AddRemind(Result);
 end;
 
-function TAssistantForm.NewTask(Title, Comment: WideString): TTask;
-begin
-  Result := TTask.Create();
-  Result.Title := Title;
-  Result.Comment := Comment;
-  AddTask(Result);
-end;
-
 procedure TAssistantForm.RefreshChildTabs();
 var
   i: Integer;
@@ -553,15 +498,6 @@ begin
   RemindListBox.Clear();
   for i := 0 to High(FReminds) do
     RemindListBox.Items.Add(FReminds[i].Title + '=' + DateTimeToStr(FReminds[i].DateTime));
-end;
-
-procedure TAssistantForm.RefreshTaskListBox();
-var
-  i: Integer;
-begin
-  TaskListBox.Clear();
-  for i := 0 to High(FTasks) do
-    TaskListBox.Items.Add(FTasks[i].Title + ' - ' + FTasks[i].Comment);
 end;
 
 procedure TAssistantForm.RemindListBoxDblClick(Sender: TObject);
@@ -592,8 +528,8 @@ end;
 
 procedure TAssistantForm.RemoteTaskActionExecute(Sender: TObject);
 begin
-  RemoteTaskByIndex(TaskListBox.ItemIndex);
-  RefreshTaskListBox();
+  AssistantTasksControl_RemoveTaskByIndex(TaskListBox.ItemIndex);
+  AssistantTasksControl_RefreshTaskListBox();
 end;
 
 procedure TAssistantForm.RemoteRemindActionExecute(Sender: TObject);
@@ -618,21 +554,6 @@ begin
   end;
 end;
 
-function TAssistantForm.RemoteTaskByIndex(Index: Integer): Boolean;
-var
-  i: Integer;
-begin
-  Result := False;
-  if (Index >= 0) and (Index < Length(FTasks)) then
-  begin
-    FTasks[Index] := nil;
-    for i := Index to High(FTasks) - 1 do
-      FTasks[i] := FTasks[i + 1];
-    SetLength(FTasks, High(FTasks));
-    Result := True;
-  end;
-end;
-
 procedure TAssistantForm.RunCommandSpeedButtonClick(Sender: TObject);
 var
   cmd: WideString;
@@ -651,7 +572,7 @@ procedure TAssistantForm.Save();
 begin
   // Сохраним данные в XML файл
   Reminder_Save(FReminds, FDataPath + 'Reminder.' + FILE_EXT_XML);
-  TTaskSaver.Save(FTasks, FDataPath + 'Tasks.' + FILE_EXT_XML);
+  AssistantTasksControl_Save();
 end;
 
 procedure TAssistantForm.SetCore(Value: TAICore);
@@ -661,22 +582,8 @@ begin
 end;
 
 procedure TAssistantForm.TaskListBoxDblClick(Sender: TObject);
-var
-  TaskForm: TTaskForm;
-  index: Integer;
 begin
-  index := TaskListBox.ItemIndex;
-  if (index >= 0) and (index < Length(FTasks)) then
-  try
-    TaskForm := TTaskForm.Create(Self);
-    TaskForm.Task := FTasks[index];
-    if TaskForm.ShowModal() = mrOK then
-    begin
-      RefreshTaskListBox();
-    end;
-    TaskForm.Free();
-  except
-  end;
+  AssistantTasksControl_ShowTask(TaskListBox.ItemIndex);
 end;
 
 procedure TAssistantForm.tcWindowsChange(Sender: TObject);

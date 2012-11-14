@@ -14,7 +14,7 @@ uses
   AssistantGui,
   {$ifdef ArAssistant}ActiveX,{$endif}
   Forms,
-  ABase, AOpenGlForm,
+  ABase, AOpenGlForm, ASystemPrepare,
   {$ifdef ArAssistant}ArBuilderForm, ArTasksForm,{$endif}
   {$ifdef ArAssistant}ArKernelObj,{$endif}
   AssistantProgram, AssistantConsolePage,
@@ -88,6 +88,9 @@ end;
 
 procedure AssistantApp_Init();
 begin
+  System_Prepare('Assistant', 'Assistant', $00000700, 'AReason', $13000000, 'AiKernel.org',
+      '(c) AiKernel.org 2010-2012', 'http://aikernel.org', '', '', '', '');
+
   Application.Initialize;
   Application.Title := 'Assistant';
 
