@@ -2,7 +2,7 @@
 @Abstract Assistant console page
 @Author Prof1983 <prof1983@ya.ru>
 @Created 13.11.2012
-@LastMod 13.11.2012
+@LastMod 15.11.2012
 }
 unit AssistantConsolePage;
 
@@ -115,7 +115,7 @@ begin
   end;
 
   ConsolePanel := AUiBox_New(Page, 0);
-  if (Result = 0) then
+  if (ConsolePanel = 0) then
   begin
     Result := -3;
     Exit;

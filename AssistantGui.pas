@@ -2,7 +2,7 @@
 @Abstract Assistant GUI
 @Author Prof1983 <prof1983@ya.ru>
 @Created 12.11.2012
-@LastMod 13.11.2012
+@LastMod 15.11.2012
 }
 unit AssistantGui;
 
@@ -11,7 +11,7 @@ interface
 uses
   Classes, ComCtrls, Controls, ExtCtrls, Forms, Menus, StdCtrls, SysUtils, ValEdit,
   ABase, ASplitterControl, AShablonForm, ASystem, ASystemUtils, ATypes, AUiDialogs,
-  AssistantAgentControl, AssistantChatControl, AssistantCommandsControl,
+  AssistantAgentControl, AssistantChatControl, AssistantCommandsControl, AssistantData,
   AssistantDeveloperControl, AssistantProgram, AssistantMemoControl, AssistantTasksControl,
   AiConsts;
 
@@ -93,7 +93,7 @@ var
   mmMain: TMainMenu;
   pbH1: TProgressBar;
 
-  pnButtons: TPanel;
+  //pnButtons: TPanel;
   pnMain: TPanel;
   pnMessages: TPanel;
   pnObjects: TPanel;
@@ -101,7 +101,7 @@ var
 
   sbMain: TStatusBar;
 
-  spButtons: TSplitterControl;
+  //spButtons: TSplitterControl;
   spMessages: TSplitterControl;
   spObjects: TSplitterControl;
   spTool: TSplitterControl;
@@ -125,7 +125,6 @@ var
   FItems: array of TProfItem;
   // --- AssistantForm ---
   memMessages: TMemo;
-  FOnExit: AProc;
 
 { TAssistantForm }
 
@@ -138,7 +137,7 @@ end;
 
 function TAssistantForm.AddMessage(const Msg: WideString): Integer;
 begin
-  AssistantChatControl_AddMessageP(Msg);
+  Result := AssistantChatControl_AddMessageP(Msg);
 end;
 
 (*function TAssistantForm.AddMessageX(Msg: AMessage{IProfNode}): AInt;
@@ -204,6 +203,7 @@ begin
 
   {if TProfXmlNode.ReadIntegerA(tmpConfig, 'ObjectTreeViewHeight', i) then tvObjects.Height := i;
   if TProfXmlNode.ReadIntegerA(tmpConfig, 'ObjectPropertyCol0Width', i) then vleObjects.ColWidths[0] := i;}
+  Result := 0;
 end;
 
 function TAssistantForm.ConfigureSave(Config: AConfig{IProfNode}): AError;
@@ -222,6 +222,7 @@ begin
 
   {TProfXmlNode.WriteIntegerA(tmpConfig, 'ObjectTreeViewHeight', tvObjects.Height);
   TProfXmlNode.WriteIntegerA(tmpConfig, 'ObjectPropertyCol0Width', vleObjects.ColWidths[0]);}
+  Result := 0;
 end;
 
 procedure TAssistantForm.CreateMenu();
@@ -267,9 +268,8 @@ end;
 procedure TAssistantForm.DoClose(var Action: TCloseAction);
 begin
   inherited;
-  //Action := caNone; //caMinimize;
-  if Assigned(FOnExit) then
-    FOnExit();
+  if Assigned(Assistant_OnExit) then
+    Assistant_OnExit();
 end;
 
 procedure TAssistantForm.DoCreate();
@@ -399,7 +399,7 @@ begin
   ts := AddMainTab(0, 'Chat');
   AssistantChatControl_Init(ts, AddMessage, AddToLog);
 
-  FExePath := ASystem.GetExePathP();
+  FExePath := ASystem.GetDirectoryPathP();
 
   ts := AddMainTab(0, 'Предложение');
   AssistantMemoControl_Init(ts, AddMessage);
@@ -473,6 +473,7 @@ begin
   AddToLog(lgNone, ltNone, '-');
 
   DoRefreshClick(Self);
+  Result := 0;
 end;
 
 procedure TAssistantForm.DoRefreshClick(Sender: TObject);

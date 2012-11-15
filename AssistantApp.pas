@@ -2,7 +2,7 @@
 @Abstract Assistant app
 @Author Prof1983 <prof1983@ya.ru>
 @Created 05.04.2007
-@LastMod 13.11.2012
+@LastMod 15.11.2012
 }
 unit AssistantApp;
 
@@ -17,7 +17,7 @@ uses
   ABase, AOpenGlForm, ASystemPrepare,
   {$ifdef ArAssistant}ArBuilderForm, ArTasksForm,{$endif}
   {$ifdef ArAssistant}ArKernelObj,{$endif}
-  AssistantProgram, AssistantConsolePage,
+  AssistantData, AssistantProgram, AssistantConsolePage,
   {$ifdef ArAssistant}ArAssistantForm,{$endif}
   fAssistant,
   fStart;
@@ -147,14 +147,15 @@ begin
     AssistantForm.Width := 800;
     //AssistantForm.OnMessage := AssistantProgram.OnSendMessage;
     //AssistantForm.OnExit := DoExit;
-    // Выходить из программы, а не сворачивать в трей.
-    AssistantForm.IsClose := True;
     AssistantForm.Init();
     AssistantForm.Core := AssistantProgram_GetCore();
     AssistantForm.Initialize();
     AssistantForm.Show();
   except
   end;
+
+  // Выходить из программы, а не сворачивать в трей.
+  Assistant_IsClose := True;
 
   // --- TrayIcon ---
   {
