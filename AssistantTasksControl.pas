@@ -2,7 +2,7 @@
 @Abstract Главное окно управления заданиями
 @Author Prof1983 <prof1983@ya.ru>
 @Created 04.06.2005
-@LastMod 14.11.2012
+@LastMod 15.11.2012
 
 Работает с фреймами заданий и вопросов типа XML.
 Описание структуры данных фрейма задания:
@@ -14,24 +14,29 @@ unit AssistantTasksControl;
 
 interface
 
+// TODO: Remove AUiData
+
 uses
-  Buttons, Controls, {ExtCtrls,} StdCtrls,
+  Buttons, Controls, StdCtrls,
   ABase, AConsts2, AControlImpl, AUtils, ASystem, ATaskForm, ATypes,
-  AUiBase, AUiButtons, AUiControls,
+  AUiBase, AUiBox, AUiButtons, AUiControls, AUiData, AUiListBox, AUiSplitter, AUiTreeView,
   AiTaskListImpl, AiTaskLoader, AiTaskSaver,
   AssistantTasks;
 
 type
   TATasksControlRec = record
-    Parent: TWinControl;
-    TaskButtonPanel: AControl{TPanel};
-    AddTaskButton: AControl{TBitBtn};
-    TaskListBox: TListBox;
+    Parent: AControl;
+    TaskButtonPanel: AControl;
+    AddTaskButton: AControl;
+    RemoveTaskButton: AControl;
+    TaskListBox: AControl;
+    TaskSplitter: AControl;
+    TaskTreeView: AControl;
   end;
 
 function AssistantTasksControl_Init(ts: TWinControl; OnSendMessage: TProcMessageStr): AError;
 
-function AssistantTasksControl_Init2(var TasksControl: TATasksControlRec): AError;
+function AssistantTasksControl_Init2(var TasksControl: TATasksControlRec; Parent: TWinControl): AError;
 
 function AssistantTasksControl_RefreshTaskListBox(): AError;
 
@@ -108,6 +113,19 @@ begin
   end;
 end;
 
+function RemoveTaskButtonClick(Obj, Data: AInt): AError; stdcall;
+begin
+  AssistantTasksControl_RemoveTaskByIndex(AUiListBox_GetItemIndex(FTasksControlRec.TaskListBox));
+  AssistantTasksControl_RefreshTaskListBox();
+  Result := 0;
+end;
+
+function TaskListBoxDblClick(Obj, Data: AInt): AError; stdcall;
+begin
+  AssistantTasksControl_ShowTask(AUiListBox_GetItemIndex(FTasksControlRec.TaskListBox));
+  Result := 0;
+end;
+
 // --- Public ---
 
 function AssistantTasksControl_Init(ts: TWinControl; OnSendMessage: TProcMessageStr): AError;
@@ -131,14 +149,52 @@ begin
   Result := 0;
 end;
 
-function AssistantTasksControl_Init2(var TasksControl: TATasksControlRec): AError;
+function AssistantTasksControl_Init2(var TasksControl: TATasksControlRec; Parent: TWinControl): AError;
 begin
+  AUiData.AddObject(Parent);
+
+  TasksControl.Parent := AControl(Parent);
+
+  // - TaskButtonPanel -
+
+  TasksControl.TaskButtonPanel := AUiBox_New(TasksControl.Parent, 0);
+  AUiControl_SetAlign(TasksControl.TaskButtonPanel, uiAlignRight);
+  AUiControl_SetWidth(TasksControl.TaskButtonPanel, 89);
+
+  // -- AddTaskButton --
+
   TasksControl.AddTaskButton := AUiButton_New(TasksControl.TaskButtonPanel);
   AUiControl_SetTextP(TasksControl.AddTaskButton, 'Добавить');
-  AUiButton_LoadGlyphP(TasksControl.AddTaskButton, AUtils.ExpandFileNameP('..\Resources\Plus.bmp'));
   AUiControl_SetOnClick(TasksControl.AddTaskButton, AddTaskButtonClick);
   AUiControl_SetSize(TasksControl.AddTaskButton, 76, 24);
   AUiControl_SetPosition(TasksControl.AddTaskButton, 6, 8);
+  AUiButton_LoadGlyphP(TasksControl.AddTaskButton, AUtils.ExpandFileNameP('..\Resources\Plus.bmp'));
+
+  // -- RemoveTaskButton --
+
+  TasksControl.RemoveTaskButton := AUiButton_New(TasksControl.TaskButtonPanel);
+  AUiControl_SetOnClick(TasksControl.RemoveTaskButton, RemoveTaskButtonClick);
+  AUiControl_SetPosition(TasksControl.RemoveTaskButton, 6, 40);
+  AUiControl_SetSize(TasksControl.RemoveTaskButton, 76, 24);
+  AUiControl_SetTextP(TasksControl.RemoveTaskButton, 'Удалить');
+  AUiButton_LoadGlyphP(TasksControl.RemoveTaskButton, AUtils.ExpandFileNameP('..\Resources\Minus.bmp'));
+
+  // - TaskTreeView -
+
+  TasksControl.TaskTreeView := AUiTreeView_New(TasksControl.Parent);
+  AUiControl_SetAlign(TasksControl.TaskTreeView, uiAlignLeft);
+  AUiControl_SetWidth(TasksControl.TaskTreeView, 140);
+
+  // - TaskSplitter -
+
+  TasksControl.TaskSplitter := AUiSplitter_New(TasksControl.Parent, AUiSplitter_VSplitter);
+
+  // - TaskListBox -
+
+  TasksControl.TaskListBox := AUiListBox_New(TasksControl.Parent);
+  AUiControl_SetAlign(TasksControl.TaskListBox, uiAlignClient);
+  AUiListBox_SetItemHeight(TasksControl.TaskListBox, 13);
+  AUiListBox_SetOnDblClick(TasksControl.TaskListBox, TaskListBoxDblClick);
 
   FTasksControlRec := TasksControl;
 
@@ -154,9 +210,9 @@ var
   I: Integer;
 begin
   try
-    FTasksControlRec.TaskListBox.Clear();
+    AUiListBox_Clear(FTasksControlRec.TaskListBox);
     for i := 0 to High(FTasks) do
-      FTasksControlRec.TaskListBox.Items.Add(FTasks[i].Title + ' - ' + FTasks[i].Comment);
+      AUiListBox_AddP(FTasksControlRec.TaskListBox, FTasks[i].Title + ' - ' + FTasks[i].Comment);
     Result := 0;
   except
     Result := -1;
@@ -188,7 +244,11 @@ function AssistantTasksControl_ShowTask(Index: AInt): AError;
 var
   TaskForm: TTaskForm;
 begin
-  if (Index >= 0) and (Index < Length(FTasks)) then
+  if (Index < 0) or (Index >= Length(FTasks)) then
+  begin
+    Result := -2;
+    Exit;
+  end;
   try
     TaskForm := TTaskForm.Create(nil);
     TaskForm.Task := FTasks[Index];

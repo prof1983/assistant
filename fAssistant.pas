@@ -2,7 +2,7 @@
 @Abstract Главная форма Assistant
 @Author Prof1983 <prof1983@ya.ru>
 @Created 03.06.2007
-@LastMod 14.11.2012
+@LastMod 15.11.2012
 
 Главная форма программы Assistant.
 Является MDI формой.
@@ -34,8 +34,8 @@ uses
   ARemind, ARemindEditForm, ARemindForm, ARemindLoader, ARemindSaver, ATaskObj,
   AUiBase, AUiDialogs, AUiWindows, ASystemData,
   AiBaseTypes, AiCoreImpl, AiCoreIntf, AiForm2007,
-  AssistantDataSaver, AssistantProgram, AssistantSettings, AssistantSettingsLoader,
-  {AssistantTasks,} AssistantTasksControl;
+  AssistantData, AssistantDataSaver, AssistantProgram, AssistantSettings, AssistantSettingsLoader,
+  AssistantTasksControl;
 
 type //** Главная форма Assistant
   TAssistantForm = class(TForm)
@@ -64,9 +64,6 @@ type //** Главная форма Assistant
     DeleteRemindBitBtn: TBitBtn;
     CloseBitBtn: TBitBtn;
     TaskTabSheet: TTabSheet;
-    TaskListBox: TListBox;
-    TaskButtonPanel: TPanel;
-    RemoteTaskBitBtn: TBitBtn;
     AddRemindAction: TAction;
     AddTaskAction: TAction;
     ExitAction: TAction;
@@ -75,8 +72,6 @@ type //** Главная форма Assistant
     RemoteRemindAction: TAction;
     RemoteTaskAction: TAction;
     LogRichEdit: TRichEdit;
-    TaskTreeView: TTreeView;
-    TaskSplitter: TSplitter;
     procedure RunCommandSpeedButtonClick(Sender: TObject);
     procedure AboutActionExecute(Sender: TObject);
     procedure AddRemindActionExecute(Sender: TObject);
@@ -93,26 +88,9 @@ type //** Главная форма Assistant
     procedure OpenProjectActionExecute(Sender: TObject);
     procedure RemindListBoxDblClick(Sender: TObject);
     procedure RemindTimerTimer(Sender: TObject);
-    procedure RemoteTaskActionExecute(Sender: TObject);
     procedure RemoteRemindActionExecute(Sender: TObject);
-    procedure TaskListBoxDblClick(Sender: TObject);
     procedure tcWindowsChange(Sender: TObject);
     procedure tcWindowsMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-  private
-    //** Контрол для ComboBox ввода команд
-    FCommandComboBoxControl: TCommandComboBoxControl;
-    //** Флаг, который указывает закрывать программу или сворачивать в трей.
-    FIsClose: Boolean;
-    {**
-      Функция добавления лог-сообщения.
-      Все лог-сообщения поступают в микроядро.
-      Далеее рассылаются по объектам вывода, записи и обработки лог-сообщений.
-    }
-    FOnAddToLog: TAIProcMessage;
-    //** Список напоминаний
-    FReminds: TReminds;
-    //** Настройки программы
-    FSettings: TAssistantSettings;
   private // Reminder
     //** Флаг, который показывает, что это окно является главным окном сборки
     FIsMainWindow: Boolean;
@@ -151,11 +129,6 @@ type //** Главная форма Assistant
     //** Микроядро системы
     property Core: TAICore read FCore write SetCore;
   public // Reminder
-    {**
-    Флаг, который указывает закрывать программу или сворачивать в трей.
-    Флаг устанавливается при выборе "Выход" в контекстном меню.
-    }
-    property IsClose: Boolean read FIsClose write FIsClose;
     //** Флаг, который показывает, что это окно является главным окном сборки
     property IsMainWindow: Boolean read FIsMainWindow write FIsMainWindow;
   end;
@@ -171,6 +144,18 @@ const
   dtSec = dtMin / 60;
 
 {$R *.dfm}
+
+var
+  {** Контрол для ComboBox ввода команд }
+  FCommandComboBoxControl: TCommandComboBoxControl;
+  {** Функция добавления лог-сообщения.
+      Все лог-сообщения поступают в микроядро.
+      Далеее рассылаются по объектам вывода, записи и обработки лог-сообщений. }
+  FOnAddToLog: TAIProcMessage;
+  {** Список напоминаний }
+  FReminds: TReminds;
+  {** Настройки программы }
+  FSettings: TAssistantSettings;
 
 { TAssistantForm }
 
@@ -369,15 +354,15 @@ end;
 
 procedure TAssistantForm.ExitActionExecute(Sender: TObject);
 begin
-  FIsClose := True;
+  Assistant_IsClose := True;
   Application.MainForm.Close();
 end;
 
 procedure TAssistantForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   // Завершать работу программы если IsClose=True или если главное окно не видимо
-  CanClose := FIsClose or not(Visible);
-  if not(FIsClose) then
+  CanClose := Assistant_IsClose or not(Visible);
+  if not(Assistant_IsClose) then
     Hide()
   else
   begin
@@ -404,10 +389,7 @@ begin
   if FSettings.Title <> '' then
     Caption := FSettings.Title;
 
-  TasksControl.Parent := TaskTabSheet;
-  TasksControl.TaskButtonPanel := AControl(TaskButtonPanel);
-  TasksControl.TaskListBox := TaskListBox;
-  AssistantTasksControl_Init2(TasksControl);
+  AssistantTasksControl_Init2(TasksControl, TaskTabSheet);
 
   // Загружаем данные из XML файлов
   Reminder_Load(FReminds, ExtractFilePath(ParamStr(0)) + 'Reminder.' + FILE_EXT_XML);
@@ -526,12 +508,6 @@ begin
   end;
 end;
 
-procedure TAssistantForm.RemoteTaskActionExecute(Sender: TObject);
-begin
-  AssistantTasksControl_RemoveTaskByIndex(TaskListBox.ItemIndex);
-  AssistantTasksControl_RefreshTaskListBox();
-end;
-
 procedure TAssistantForm.RemoteRemindActionExecute(Sender: TObject);
 begin
   RemoteRemindByIndex(RemindListBox.ItemIndex);
@@ -579,11 +555,6 @@ procedure TAssistantForm.SetCore(Value: TAICore);
 begin
   FCore := Value;
   FOnAddToLog := TAICore(Value).AddLogMessage;
-end;
-
-procedure TAssistantForm.TaskListBoxDblClick(Sender: TObject);
-begin
-  AssistantTasksControl_ShowTask(TaskListBox.ItemIndex);
 end;
 
 procedure TAssistantForm.tcWindowsChange(Sender: TObject);
