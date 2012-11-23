@@ -2,7 +2,7 @@
 @Abstract Контрол для создания и редактирования фреймов, модулей, агентов и т.д.
 @Author Prof1983 <prof1983@ya.ru>
 @Created 06.04.2007
-@LastMod 13.11.2012
+@LastMod 23.11.2012
 }
 unit AssistantDeveloperControl;
 
@@ -23,7 +23,7 @@ type //** Контрол для создания и редактирования
     FCodeControls: array of TArCodeControl;
     pcElements: TPageControl;
   protected
-    function DoInitialize(): TProfError; override; safecall;
+    function DoInitialize(): AError; override; safecall;
   public
       // Добавить вкладку редактирования кода
     function NewCodeControl(const AName: WideString): TArCodeControl;
@@ -49,7 +49,7 @@ end;
 
 { TDeveloperControl }
 
-function TDeveloperControl.DoInitialize(): TProfError;
+function TDeveloperControl.DoInitialize(): AError;
 var
   cc: TArCodeControl;
   S: string;

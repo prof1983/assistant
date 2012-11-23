@@ -2,7 +2,7 @@
 @Abstract Assistant main class
 @Author Prof1983 <prof1983@ya.ru>
 @Created 14.07.2007
-@LastMod 13.11.2012
+@LastMod 23.11.2012
 }
 unit AssistantProgram;
 
@@ -39,7 +39,7 @@ type //** Главный класс программы Assistant
     procedure DoCreate(); override;
     {** Срабатывает при уничтожении объекта }
     procedure DoDestroy(); override;
-    function DoInitialize(): TProfError; override;
+    function DoInitialize(): AError; override;
     {** Срабытывает перед запуском подпроцесса }
     function DoStart(): WordBool; override;
     {** Срабатывает после удачного запуска программа (сервиса) }
@@ -447,7 +447,7 @@ begin
   inherited DoDestroy();
 end;
 
-function TAssistantProgram.DoInitialize(): TProfError;
+function TAssistantProgram.DoInitialize(): AError;
 begin
   Result := inherited DoInitialize();
   InitLog();
@@ -581,7 +581,7 @@ begin
   FCore.Agents.Add(FChatAgent);
 end;
 
-function TAssistantProgram.Initialize(): TProfError;
+function TAssistantProgram.Initialize(): AError;
 begin
   Result := inherited Initialize();
 

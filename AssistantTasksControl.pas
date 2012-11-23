@@ -2,7 +2,7 @@
 @Abstract Главное окно управления заданиями
 @Author Prof1983 <prof1983@ya.ru>
 @Created 04.06.2005
-@LastMod 15.11.2012
+@LastMod 23.11.2012
 
 Работает с фреймами заданий и вопросов типа XML.
 Описание структуры данных фрейма задания:
@@ -77,7 +77,7 @@ type
     //** Срабатывает при уничтожении
     procedure DoDestroy(); override;
     //** Срабатывает при инициализации
-    function DoInitialize(): TProfError; override; safecall;
+    function DoInitialize(): AError; override; safecall;
   public
     //** Обновить список заданий
     procedure Refresh();
@@ -279,7 +279,7 @@ begin
   inherited DoDestroy();
 end;
 
-function TATasksControl.DoInitialize(): TProfError;
+function TATasksControl.DoInitialize(): AError;
 begin
   lbTasks := TListBox.Create(FControl);
   lbTasks.Parent := FControl;

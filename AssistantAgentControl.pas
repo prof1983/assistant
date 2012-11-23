@@ -2,7 +2,7 @@
 @Abstract Контрол формы для агента
 @Author Prof1983 <prof1983@ya.ru>
 @Created 05.04.2007
-@LastMod 13.11.2012
+@LastMod 23.11.2012
 }
 unit AssistantAgentControl;
 
@@ -49,7 +49,7 @@ type
     procedure memInputKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btSendClick(Sender: TObject);
   protected
-    function DoInitialize(): TProfError; override; safecall;
+    function DoInitialize(): AError; override; safecall;
   public
     function AddToLog(AGroup: TLogGroupMessage; AType: TLogTypeMessage; const AStrMsg: WideString): Integer; override;
     //** Контрол вывода лог-сообщений в RichEdit
@@ -111,7 +111,7 @@ begin
   memInput.Clear();
 end;
 
-function TAgentControl.DoInitialize(): TProfError;
+function TAgentControl.DoInitialize(): AError;
 begin
   Result := inherited DoInitialize();
 
